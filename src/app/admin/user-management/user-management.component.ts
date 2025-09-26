@@ -38,6 +38,9 @@ export class UserManagementComponent implements OnInit {
   sortBy: 'name' | 'email' | 'images' | 'date' = 'images';
   imageTypeFilter: string = '';
   sortOrder: 'asc' | 'desc' = 'desc';
+  locationFilter: string = '';
+  registrationFilter: string = '';
+  imageCountFilter: string = '';
   
   // Pagination
   currentPage = 1;
@@ -135,9 +138,11 @@ export class UserManagementComponent implements OnInit {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(folder => {
         const fullName = `${folder.user.first_name} ${folder.user.last_name}`.toLowerCase();
+        const locationDisplay = this.getUserLocationDisplay(folder.user).toLowerCase();
         return fullName.includes(term) ||
                folder.user.username.toLowerCase().includes(term) ||
-               folder.user.email.toLowerCase().includes(term);
+               folder.user.email.toLowerCase().includes(term) ||
+               locationDisplay.includes(term);
       });
     }
 
@@ -148,6 +153,55 @@ export class UserManagementComponent implements OnInit {
           return folder.user.is_active;
         } else {
           return !folder.user.is_active;
+        }
+      });
+    }
+
+    // Apply location filter
+    if (this.locationFilter) {
+      filtered = filtered.filter(folder => {
+        if (this.locationFilter === 'with-location') {
+          return folder.user.profile && (folder.user.profile.province || folder.user.profile.city);
+        } else if (this.locationFilter === 'without-location') {
+          return !folder.user.profile || (!folder.user.profile.province && !folder.user.profile.city);
+        }
+        return true;
+      });
+    }
+
+    // Apply registration filter
+    if (this.registrationFilter) {
+      const now = new Date();
+      filtered = filtered.filter(folder => {
+        const joinDate = new Date(folder.user.date_joined);
+        switch (this.registrationFilter) {
+          case 'last-week':
+            return joinDate > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          case 'last-month':
+            return joinDate > new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          case 'last-3-months':
+            return joinDate > new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply image count filter
+    if (this.imageCountFilter) {
+      filtered = filtered.filter(folder => {
+        const imageCount = folder.user.total_images || 0;
+        switch (this.imageCountFilter) {
+          case 'active':
+            return imageCount >= 1;
+          case 'very-active':
+            return imageCount >= 5;
+          case 'super-active':
+            return imageCount >= 10;
+          case 'no-images':
+            return imageCount === 0;
+          default:
+            return true;
         }
       });
     }
@@ -311,12 +365,27 @@ export class UserManagementComponent implements OnInit {
 
   // Computed properties for template
   getTotalImages(): number {
-    return this.userFolders.reduce((total, folder) => total + (folder.user.total_images || 0), 0);
+    return this.userStats?.total_images || this.userFolders.reduce((total, folder) => total + (folder.user.total_images || 0), 0);
   }
 
   getAverageImagesPerUser(): number {
-    if (this.userFolders.length === 0) return 0;
-    return this.getTotalImages() / this.userFolders.length;
+    return this.userStats?.average_images_per_user || 0;
+  }
+
+  getLocationPercentage(): number {
+    if (!this.userStats || this.userStats.total_users === 0) return 0;
+    return Math.round((this.userStats.users_with_profiles / this.userStats.total_users) * 100);
+  }
+
+  getUserLocationDisplay(user: User): string {
+    if (!user.profile) return '';
+    
+    const parts = [];
+    if (user.profile.barangay) parts.push(user.profile.barangay);
+    if (user.profile.city) parts.push(user.profile.city);
+    if (user.profile.province) parts.push(user.profile.province);
+    
+    return parts.join(', ') || user.profile.full_address || '';
   }
 
   get filteredUserFolders(): UserFolder[] {

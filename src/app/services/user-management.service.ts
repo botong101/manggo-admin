@@ -18,6 +18,14 @@ export interface User {
   verified_images?: number;
   unverified_images?: number;
   recent_activity?: string;
+  // Location information from UserProfile
+  profile?: {
+    province?: string;
+    city?: string;
+    barangay?: string;
+    postal_code?: string;
+    full_address?: string;
+  };
 }
 
 export interface UserWithImages {
@@ -38,11 +46,15 @@ export interface UserStats {
   total_users: number;
   active_users: number;
   inactive_users: number;
-  staff_users: number;
+  users_with_profiles: number;
+  total_images: number;
+  average_images_per_user: number;
   recent_registrations: number;
-  top_uploaders: {
-    user: User;
-    upload_count: number;
+  top_users: {
+    id: number;
+    username: string;
+    full_name: string;
+    image_count: number;
   }[];
 }
 
@@ -88,10 +100,36 @@ export class UserManagementService {
         map(response => {
           console.log('Raw users API response:', response);
           if (response.success && response.data) {
-            return response.data;
+            // Transform the API response to include location information
+            const users = response.data.users.map((user: any) => ({
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              date_joined: user.date_joined,
+              is_active: user.is_active,
+              is_staff: user.is_staff,
+              last_login: user.last_login,
+              total_images: user.total_images,
+              verified_images: user.verified_images,
+              unverified_images: user.unverified_images,
+              profile: user.profile ? {
+                province: user.profile.province,
+                city: user.profile.city,
+                barangay: user.profile.barangay,
+                postal_code: user.profile.postal_code,
+                full_address: user.profile.full_address
+              } : undefined
+            }));
+            
+            return {
+              users: users,
+              pagination: response.data.pagination
+            };
           }
           // If API doesn't have users endpoint yet, generate from image data
-          return this.getUsersFromImages();
+          throw new Error('API response not in expected format');
         }),
         catchError(error => {
           console.error('Error fetching users, falling back to image data:', error);
@@ -165,41 +203,70 @@ export class UserManagementService {
 
   // Get detailed user information with images
   getUserWithImages(userId: number): Observable<UserWithImages> {
-    // First try to get user details, then get their images
-    return this.http.get<any>(`${this.apiUrl}/classified-images/?page_size=1000`)
+    // Use the new API endpoint to get user images
+    return this.http.get<any>(`${this.apiUrl}/users/${userId}/images/`)
       .pipe(
         map(response => {
-          const allImages = response.success ? response.data.images : [];
-          const userImages = allImages.filter((image: MangoImage) => image.user.id === userId);
-          
-          if (userImages.length === 0) {
-            throw new Error('User not found or has no images');
+          if (response.success && response.data) {
+            const user = response.data.user;
+            const images = response.data.images;
+            const stats = this.calculateImageStats(images);
+
+            return {
+              user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                date_joined: user.date_joined,
+                is_active: true,
+                is_staff: false,
+                total_images: images.length,
+                verified_images: stats.verified,
+                unverified_images: stats.unverified
+              },
+              images: images,
+              imageStats: stats
+            };
           }
-
-          const user = userImages[0].user;
-          const stats = this.calculateImageStats(userImages);
-
-          return {
-            user: {
-              id: user.id,
-              username: user.username,
-              email: user.email,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              date_joined: user.date_joined,
-              is_active: true,
-              is_staff: false,
-              total_images: userImages.length,
-              verified_images: stats.verified,
-              unverified_images: stats.unverified
-            },
-            images: userImages,
-            imageStats: stats
-          };
+          throw new Error('API response not in expected format');
         }),
         catchError(error => {
-          console.error('Error fetching user images:', error);
-          throw error;
+          console.error('Error fetching user images from new API, falling back to old method:', error);
+          // Fallback to old method using classified-images endpoint
+          return this.http.get<any>(`${this.apiUrl}/classified-images/?page_size=1000`)
+            .pipe(
+              map(response => {
+                const allImages = response.success ? response.data.images : [];
+                const userImages = allImages.filter((image: MangoImage) => image.user.id === userId);
+                
+                if (userImages.length === 0) {
+                  throw new Error('User not found or has no images');
+                }
+
+                const user = userImages[0].user;
+                const stats = this.calculateImageStats(userImages);
+
+                return {
+                  user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    date_joined: user.date_joined,
+                    is_active: true,
+                    is_staff: false,
+                    total_images: userImages.length,
+                    verified_images: stats.verified,
+                    unverified_images: stats.unverified
+                  },
+                  images: userImages,
+                  imageStats: stats
+                };
+              })
+            );
         })
       );
   }
@@ -282,41 +349,63 @@ export class UserManagementService {
 
   // Get user statistics
   getUserStats(): Observable<UserStats> {
-    return this.getUsers({ page_size: 1000 })
+    return this.http.get<any>(`${this.apiUrl}/users/statistics/`)
       .pipe(
         map(response => {
-          const users = response.users;
-          const now = new Date();
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-          const stats: UserStats = {
-            total_users: users.length,
-            active_users: users.filter(u => u.is_active).length,
-            inactive_users: users.filter(u => !u.is_active).length,
-            staff_users: users.filter(u => u.is_staff).length,
-            recent_registrations: users.filter(u => new Date(u.date_joined) > weekAgo).length,
-            top_uploaders: users
-              .filter(u => u.total_images && u.total_images > 0)
-              .sort((a, b) => (b.total_images || 0) - (a.total_images || 0))
-              .slice(0, 5)
-              .map(user => ({
-                user,
-                upload_count: user.total_images || 0
-              }))
-          };
-
-          return stats;
+          if (response.success && response.data) {
+            return response.data;
+          }
+          throw new Error('API response not in expected format');
         }),
         catchError(error => {
-          console.error('Error calculating user stats:', error);
-          return of({
-            total_users: 0,
-            active_users: 0,
-            inactive_users: 0,
-            staff_users: 0,
-            recent_registrations: 0,
-            top_uploaders: []
-          });
+          console.error('Error fetching user stats from new API, falling back to calculation:', error);
+          // Fallback to calculating from user list
+          return this.getUsers({ page_size: 1000 })
+            .pipe(
+              map(response => {
+                const users = response.users;
+                const now = new Date();
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+                const totalImages = users.reduce((sum, u) => sum + (u.total_images || 0), 0);
+                const averageImages = users.length > 0 ? totalImages / users.length : 0;
+
+                const stats: UserStats = {
+                  total_users: users.length,
+                  active_users: users.filter(u => u.is_active).length,
+                  inactive_users: users.filter(u => !u.is_active).length,
+                  users_with_profiles: users.filter(u => u.profile).length,
+                  total_images: totalImages,
+                  average_images_per_user: Math.round(averageImages * 100) / 100,
+                  recent_registrations: users.filter(u => new Date(u.date_joined) > weekAgo).length,
+                  top_users: users
+                    .filter(u => u.total_images && u.total_images > 0)
+                    .sort((a, b) => (b.total_images || 0) - (a.total_images || 0))
+                    .slice(0, 5)
+                    .map(user => ({
+                      id: user.id,
+                      username: user.username,
+                      full_name: `${user.first_name} ${user.last_name}`.trim() || user.username,
+                      image_count: user.total_images || 0
+                    }))
+                };
+
+                return stats;
+              }),
+              catchError(fallbackError => {
+                console.error('Error in fallback user stats calculation:', fallbackError);
+                return of({
+                  total_users: 0,
+                  active_users: 0,
+                  inactive_users: 0,
+                  users_with_profiles: 0,
+                  total_images: 0,
+                  average_images_per_user: 0,
+                  recent_registrations: 0,
+                  top_users: []
+                });
+              })
+            );
         })
       );
   }

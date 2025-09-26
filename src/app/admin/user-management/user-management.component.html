@@ -103,16 +103,18 @@
       </div>
     </div>
 
-    <!-- Average Images per User -->
+    <!-- Users with Location Data -->
     <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium text-gray-600">Avg Images/User</p>
-          <p class="text-2xl font-bold text-gray-900">{{ getAverageImagesPerUser() | number:'1.1-1' }}</p>
+          <p class="text-sm font-medium text-gray-600">With Location</p>
+          <p class="text-2xl font-bold text-gray-900">{{ userStats.users_with_profiles | number }}</p>
+          <p class="text-xs text-gray-500">{{ getLocationPercentage() }}% of users</p>
         </div>
         <div class="bg-orange-100 p-3 rounded-full">
           <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H9a2 2 0 01-2-2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
         </div>
       </div>
@@ -169,6 +171,48 @@
         </select>
       </div>
     </div>
+    
+    <!-- Additional Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      <!-- Location Filter -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Location Status</label>
+        <select [(ngModel)]="locationFilter" 
+                (change)="filterUsers()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Users</option>
+          <option value="with-location">With Location Data</option>
+          <option value="without-location">Without Location Data</option>
+        </select>
+      </div>
+      
+      <!-- Recent Activity Filter -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Registration Period</label>
+        <select [(ngModel)]="registrationFilter" 
+                (change)="filterUsers()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Time</option>
+          <option value="last-week">Last Week</option>
+          <option value="last-month">Last Month</option>
+          <option value="last-3-months">Last 3 Months</option>
+        </select>
+      </div>
+      
+      <!-- Image Count Filter -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Image Activity</label>
+        <select [(ngModel)]="imageCountFilter" 
+                (change)="filterUsers()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Users</option>
+          <option value="active">Has Images (1+)</option>
+          <option value="very-active">Very Active (5+)</option>
+          <option value="super-active">Super Active (10+)</option>
+          <option value="no-images">No Images</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <!-- Loading State -->
@@ -209,6 +253,18 @@
               <h3 class="text-lg font-semibold text-gray-900">{{ getUserDisplayName(folder.user) }}</h3>
               <p class="text-sm text-gray-600">{{ folder.user.email }}</p>
               <p class="text-xs text-gray-500">{{ '@' + folder.user.username }} • Joined {{ formatDate(folder.user.date_joined) }}</p>
+              
+              <!-- Location Information -->
+              <div *ngIf="folder.user.profile && (folder.user.profile.province || folder.user.profile.city)" 
+                   class="mt-1 flex items-center text-xs text-gray-600">
+                <svg class="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>
+                  {{ getUserLocationDisplay(folder.user) }}
+                </span>
+              </div>
             </div>
           </div>
 
