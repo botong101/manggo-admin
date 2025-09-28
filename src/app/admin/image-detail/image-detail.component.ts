@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 import { MangoDiseaseService, MangoImage, ApiResponse, UserConfirmation } from '../../services/mango-disease.service';
 import { environment } from '../../../environments/environment';
 
@@ -48,6 +49,8 @@ export interface ImageDetailData extends MangoImage {
   image_type?: string;
   disease_detected?: string;
   confidence?: number;
+  user_feedback?: string; // Explicitly add user_feedback property
+  location_accuracy_confirmed?: boolean; // Explicitly add location_accuracy_confirmed property
 }
 
 @Component({
@@ -92,13 +95,13 @@ export class ImageDetailComponent implements OnInit {
       this.error = null;
 
       // Load basic image data
-      const imageResponse = await this.mangoDiseaseService.getImageDetails(this.imageId).toPromise();
+      const imageResponse = await firstValueFrom(this.mangoDiseaseService.getImageDetails(this.imageId));
       if (imageResponse && imageResponse.success) {
         this.imageData = imageResponse.data;
       }
 
       // Load prediction details
-      const predictionResponse = await this.mangoDiseaseService.getImagePredictionDetails(this.imageId).toPromise();
+      const predictionResponse = await firstValueFrom(this.mangoDiseaseService.getImagePredictionDetails(this.imageId));
       console.debug('DEBUG predictionResponse (from service):', predictionResponse);
       if (predictionResponse && predictionResponse.success) {
         this.predictionData = predictionResponse;
@@ -106,7 +109,7 @@ export class ImageDetailComponent implements OnInit {
 
       // Load user confirmation for this image
       try {
-        this.userConfirmation = await this.mangoDiseaseService.getUserConfirmationForImage(this.imageId).toPromise() || null;
+        this.userConfirmation = await firstValueFrom(this.mangoDiseaseService.getUserConfirmationForImage(this.imageId)) || null;
         if (this.userConfirmation) {
           console.log('✅ User confirmation loaded:', this.userConfirmation);
         } else {
@@ -138,7 +141,7 @@ export class ImageDetailComponent implements OnInit {
 
     try {
       this.updating = true;
-      const response = await this.mangoDiseaseService.updateImageVerification(this.imageData.id, isVerified).toPromise();
+      const response = await firstValueFrom(this.mangoDiseaseService.updateImageVerification(this.imageData.id, isVerified));
       
       if (response && response.success) {
         this.imageData.is_verified = isVerified;
@@ -157,7 +160,7 @@ export class ImageDetailComponent implements OnInit {
     if (confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
       try {
         this.updating = true;
-        const response = await this.mangoDiseaseService.deleteImage(this.imageData.id).toPromise();
+        const response = await firstValueFrom(this.mangoDiseaseService.deleteImage(this.imageData.id));
         
         if (response && response.success) {
           this.location.back();

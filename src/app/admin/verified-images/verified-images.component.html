@@ -21,6 +21,10 @@
           <span *ngIf="!hasActiveFilters()">{{ totalUnverifiedCount }} Unverified</span>
           <span *ngIf="hasActiveFilters()">{{ getFilteredTotals().unverified }} of {{ totalUnverifiedCount }} Unverified</span>
         </span>
+        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+          <span *ngIf="!hasActiveFilters()">{{ totalUnknownCount }} Unknown</span>
+          <span *ngIf="hasActiveFilters()">{{ getFilteredTotals().unknown }} of {{ totalUnknownCount }} Unknown</span>
+        </span>
         <button 
           (click)="downloadAllVerifiedImages()"
           [disabled]="downloadingAll || totalVerifiedCount === 0"
@@ -258,113 +262,142 @@
           </div>
 
           <!-- Folder Content -->
-      <div 
-        class="p-4 bg-gray-50">
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div 
-            *ngFor="let image of folder.images"
-            class="relative group">
-            
-            <!-- Selection Checkbox -->
-            <div class="absolute top-2 left-2 z-10">
-              <input
-                type="checkbox"
-                [checked]="selectedImages.has(image.id)"
-                (change)="toggleImageSelection(image.id)"
-                class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-            </div>
-
-            <!-- Verified Badge -->
-            <div class="absolute top-2 right-2 z-10">
-              <span 
-                *ngIf="image.is_verified"
-                class="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                <i class="fas fa-check mr-1"></i>
-                Verified
-              </span>
-              <span 
-                *ngIf="!image.is_verified"
-                class="bg-yellow-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                <i class="fas fa-clock mr-1"></i>
-                Unverified
-              </span>
-            </div>
-
-            <!-- Image Card -->
-            <div 
-              class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden border-2"
-              [class.border-blue-500]="selectedImages.has(image.id)"
-              [class.border-gray-200]="!selectedImages.has(image.id)"
-              (click)="viewImageDetails(image.id)">
+          <div *ngIf="folder.expanded" class="p-4 bg-gray-50">
+            <!-- Table View -->
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                      <input
+                        type="checkbox"
+                        [checked]="isAllInFolderSelected(folder)"
+                        (change)="selectAllInFolder(folder)"
+                        class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Image ID
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Filename
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Detection Date
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Confidence
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr 
+                    *ngFor="let image of folder.images"
+                    class="hover:bg-gray-50 transition-colors"
+                    [class.bg-blue-50]="selectedImages.has(image.id)">
+                    
+                    <!-- Selection Checkbox -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        [checked]="selectedImages.has(image.id)"
+                        (change)="toggleImageSelection(image.id)"
+                        class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    </td>
+                    
+                    <!-- Image ID -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{{ image.id }}
+                    </td>
+                    
+                    <!-- Filename -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900 font-medium truncate max-w-xs" [title]="image.original_filename">
+                        {{ image.original_filename }}
+                      </div>
+                      <div class="text-xs text-gray-500 flex items-center mt-1">
+                        {{ getDiseaseTypeIcon(getDiseaseType(image)) }} 
+                        <span class="ml-1">{{ getDiseaseType(image) | titlecase }}</span>
+                      </div>
+                    </td>
+                    
+                    <!-- Detection Date -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {{ formatDate(image.uploaded_at) }}
+                    </td>
+                    
+                    <!-- Confidence -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        [class.bg-green-100]="getConfidenceScore(image) >= 80"
+                        [class.text-green-800]="getConfidenceScore(image) >= 80"
+                        [class.bg-yellow-100]="getConfidenceScore(image) >= 60 && getConfidenceScore(image) < 80"
+                        [class.text-yellow-800]="getConfidenceScore(image) >= 60 && getConfidenceScore(image) < 80"
+                        [class.bg-red-100]="getConfidenceScore(image) < 60"
+                        [class.text-red-800]="getConfidenceScore(image) < 60">
+                        {{ getConfidenceScore(image).toFixed(1) }}%
+                      </span>
+                    </td>
+                    
+                    <!-- Status -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        *ngIf="image.is_verified"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check mr-1"></i>
+                        Verified
+                      </span>
+                      <span 
+                        *ngIf="!image.is_verified"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-clock mr-1"></i>
+                        Unverified
+                      </span>
+                    </td>
+                    
+                    <!-- Actions -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div class="flex items-center space-x-2">
+                        <button
+                          (click)="viewImageDetails(image.id)"
+                          class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                          title="View Image Details">
+                          <i class="fas fa-eye mr-1"></i>
+                          Details
+                        </button>
+                        <button
+                          (click)="downloadImage(image)"
+                          class="inline-flex items-center px-2 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-600 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                          title="Download Image">
+                          <i class="fas fa-download"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
               
-              <div class="aspect-square relative group">
-                <img 
-                  [src]="getImageUrl(image)"
-                  [alt]="image.original_filename"
-                  class="w-full h-full object-cover"
-                  loading="lazy">
-                
-                <!-- Image Overlay with Actions -->
-                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
-                  <button (click)="downloadImage(image); $event.stopPropagation()" 
-                          class="opacity-0 group-hover:opacity-100 bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-110 shadow-lg">
-                    <div class="flex items-center justify-center">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                      </svg>
-                    </div>
-                  </button>
-                </div>
-                
-                <!-- Confidence Badge -->
-                 <!--
-                <div class="absolute bottom-2 left-2">
-                  <span 
-                    class="px-2 py-1 rounded text-xs font-medium text-white"
-                    [class.bg-green-600]="image.confidence_score >= 80"
-                    [class.bg-yellow-600]="image.confidence_score >= 60 && image.confidence_score < 80"
-                    [class.bg-red-600]="image.confidence_score < 60">
-                    {{ image.confidence_score }}%
-                  </span>
-                </div>
-              </div>
-              -->
-
-              <!-- Image Info -->
-              <div class="p-3">
-                <p class="text-sm font-medium text-gray-900 truncate" 
-                   [title]="image.original_filename">
-                  {{ image.original_filename }}
-                </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ formatDate(image.uploaded_at) }}
-                </p>
-                <p class="text-xs mt-1" 
-                   [class]="getDiseaseTypeClass(getDiseaseType(image))">
-                  {{ getDiseaseTypeIcon(getDiseaseType(image)) }} {{ getDiseaseType(image) | titlecase }}
-                </p>
-                <div class="flex items-center mt-2">
-                  <span 
-                    class="px-2 py-1 rounded text-xs font-medium text-white"
-                    [class.bg-green-600]="image.confidence_score >= 0.80"
-                    [class.bg-yellow-600]="image.confidence_score >= 0.60 && image.confidence_score < 0.80"
-                    [class.bg-red-600]="image.confidence_score < 0.60">
-                    {{ image.confidence_score }}%
-                  </span>
-                </div>
+              <!-- Empty folder state -->
+              <div *ngIf="folder.images.length === 0" class="text-center py-8">
+                <i class="fas fa-image text-gray-400 text-4xl mb-2"></i>
+                <p class="text-gray-500">No images in this folder</p>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Download Progress -->
-        <div *ngIf="folder.downloading" class="mt-2">
-          <div class="bg-blue-100 rounded-full h-2">
-            <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 100%"></div>
+            <!-- Download Progress -->
+            <div *ngIf="folder.downloading" class="mt-4">
+              <div class="bg-blue-100 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 100%"></div>
+              </div>
+              <p class="text-xs text-blue-600 mt-1">{{ getDownloadProgress(folder) }}</p>
+            </div>
           </div>
-          <p class="text-xs text-blue-600 mt-1">{{ getDownloadProgress(folder) }}</p>
-        </div>
-      </div>
     </div>
   </div>
 

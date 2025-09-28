@@ -390,17 +390,17 @@
               </div>
             </div>
             
-            <!-- Location & GPS Data -->
+            <!-- User Confirmation Location Data -->
             <div *ngIf="userConfirmation && userConfirmation.location_consent" 
-                 class="bg-white p-6 rounded-lg border border-blue-200 mb-6">
+                 class="bg-white p-6 rounded-lg border border-orange-200 mb-6">
               <h4 class="text-lg font-semibold text-gray-800 mb-4">
-                <i class="fas fa-map-marked-alt mr-2"></i>Location & GPS Information
+                <i class="fas fa-user-check mr-2"></i>User Confirmation Location Data
               </h4>
               
-              <div class="bg-blue-50 p-4 rounded-lg mb-4">
+              <div class="bg-orange-50 p-4 rounded-lg mb-4">
                 <div class="flex items-center mb-3">
-                  <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                  <span class="text-blue-800 font-medium">Location data provided with user consent</span>
+                  <i class="fas fa-info-circle text-orange-600 mr-2"></i>
+                  <span class="text-orange-800 font-medium">Location data from user confirmation with consent</span>
                 </div>
               </div>
               
@@ -471,8 +471,79 @@
               </div>
             </div>
             
+            <!-- EXIF Location Data from Image -->
+            <div *ngIf="imageData && imageData.location_consent_given && (imageData.latitude || imageData.longitude)" 
+                 class="bg-white p-6 rounded-lg border border-green-200 mb-6">
+              <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-map-marked-alt mr-2"></i>EXIF Location Data
+              </h4>
+              
+              <div class="bg-green-50 p-4 rounded-lg mb-4">
+                <div class="flex items-center mb-3">
+                  <i class="fas fa-camera text-green-600 mr-2"></i>
+                  <span class="text-green-800 font-medium">Location extracted from image EXIF data with user consent</span>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div *ngIf="imageData.latitude" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="text-sm text-blue-700 mb-1 font-medium">
+                    <i class="fas fa-map-pin mr-1"></i>Latitude
+                  </div>
+                  <div class="font-mono text-gray-900 text-lg">{{ imageData.latitude | number:'1.6-6' }}</div>
+                </div>
+                
+                <div *ngIf="imageData.longitude" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="text-sm text-blue-700 mb-1 font-medium">
+                    <i class="fas fa-map-pin mr-1"></i>Longitude
+                  </div>
+                  <div class="font-mono text-gray-900 text-lg">{{ imageData.longitude | number:'1.6-6' }}</div>
+                </div>
+                
+                <div *ngIf="imageData.location_address" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="text-sm text-blue-700 mb-1 font-medium">
+                    <i class="fas fa-map-marker-alt mr-1"></i>Address
+                  </div>
+                  <div class="text-gray-900">{{ imageData.location_address }}</div>
+                </div>
+                
+                <div *ngIf="imageData.location_source" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="text-sm text-blue-700 mb-1 font-medium">
+                    <i class="fas fa-source-code mr-1"></i>Data Source
+                  </div>
+                  <div class="text-gray-900 capitalize">{{ imageData.location_source }}</div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="text-sm text-blue-700 mb-1 font-medium">
+                    <i class="fas fa-check-circle mr-1"></i>Consent Status
+                  </div>
+                  <div class="text-green-600 font-medium">✓ User Consented</div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div class="text-sm text-gray-600 mb-1 font-medium">
+                    <i class="fas fa-bullseye mr-1"></i>Location Accuracy
+                  </div>
+                  <div [class]="imageData.location_accuracy_confirmed ? 'text-green-600 font-medium' : 'text-orange-600 font-medium'">
+                    <i [class]="imageData.location_accuracy_confirmed ? 'fas fa-check-circle mr-1' : 'fas fa-question-circle mr-1'"></i>
+                    {{ imageData.location_accuracy_confirmed ? 'User confirmed as accurate' : 'User marked as inaccurate' }}
+                  </div>
+                </div>
+                
+                <div *ngIf="imageData.latitude && imageData.longitude" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="text-sm text-blue-700 mb-1 font-medium">
+                    <i class="fas fa-external-link-alt mr-1"></i>View on Map
+                  </div>
+                  <a [href]="'https://www.google.com/maps?q=' + imageData.latitude + ',' + imageData.longitude" 
+                     target="_blank" 
+                     class="text-blue-600 hover:text-blue-800 font-medium">Open in Google Maps</a>
+                </div>
+              </div>
+            </div>
+
             <!-- No Location Data Available -->
-            <div *ngIf="!userConfirmation || !userConfirmation.location_consent" 
+            <div *ngIf="(!imageData?.location_consent_given || (!imageData?.latitude && !imageData?.longitude)) && (!userConfirmation || !userConfirmation.location_consent)" 
                  class="bg-white p-6 rounded-lg border border-gray-200 mb-6">
               <h4 class="text-lg font-semibold text-gray-800 mb-4">
                 <i class="fas fa-map-marked-alt mr-2"></i>Location & GPS Information
@@ -481,8 +552,8 @@
               <div class="text-center py-8">
                 <div class="text-gray-400 text-4xl mb-4">📍</div>
                 <h5 class="text-md font-medium text-gray-600 mb-2">No Location Data Available</h5>
-                <p class="text-gray-500 text-sm" *ngIf="!userConfirmation">No user confirmation data available for this image.</p>
-                <p class="text-gray-500 text-sm" *ngIf="userConfirmation && !userConfirmation.location_consent">User did not consent to share location information.</p>
+                <p class="text-gray-500 text-sm" *ngIf="!imageData?.location_consent_given">User did not consent to share location information.</p>
+                <p class="text-gray-500 text-sm" *ngIf="imageData?.location_consent_given && !imageData?.latitude && !imageData?.longitude">No GPS data found in image EXIF.</p>
               </div>
             </div>
             
@@ -739,12 +810,58 @@
               </div>
             </div>
             
-            <!-- No Feedback Available -->
-            <div *ngIf="!userConfirmation" class="text-center py-12">
-              <div class="text-gray-400 text-6xl mb-4">💭</div>
-              <h4 class="text-xl font-medium text-gray-600 mb-3">No User Verification Available</h4>
-              <p class="text-gray-500 mb-2">This image hasn't been verified by users yet.</p>
-              <p class="text-sm text-gray-400">User verification includes confirmation of AI prediction accuracy and optional feedback comments.</p>
+            <!-- No User Confirmation but Check ImageData for Feedback -->
+            <div *ngIf="!userConfirmation" class="space-y-6">
+              
+              <!-- Show User Feedback from ImageData if Available -->
+              <div *ngIf="imageData?.user_feedback" class="bg-white p-6 rounded-lg border-2 border-blue-200">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                  <i class="fas fa-comment-dots mr-2"></i>
+                  User Feedback (from Analysis)
+                </h4>
+                
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="flex items-start space-x-3">
+                    <i class="fas fa-quote-left text-blue-500 text-xl mt-1"></i>
+                    <div class="flex-1">
+                      <p class="text-blue-900 italic leading-relaxed text-base">{{ imageData.user_feedback }}</p>
+                    </div>
+                    <i class="fas fa-quote-right text-blue-500 text-xl mt-1"></i>
+                  </div>
+                </div>
+                
+                <div class="mt-4 bg-gray-50 p-3 rounded-lg">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span class="text-gray-600 font-medium">User Confirmation Status:</span>
+                      <div class="font-semibold mt-1" 
+                           [class.text-green-600]="imageData.user_confirmed_correct === true"
+                           [class.text-red-600]="imageData.user_confirmed_correct === false"
+                           [class.text-gray-600]="imageData.user_confirmed_correct === null">
+                        <i class="fas mr-1" 
+                           [class.fa-check-circle]="imageData.user_confirmed_correct === true"
+                           [class.fa-times-circle]="imageData.user_confirmed_correct === false"
+                           [class.fa-question-circle]="imageData.user_confirmed_correct === null"></i>
+                        {{ imageData.user_confirmed_correct === true ? 'User Marked as Verified' : 
+                           imageData.user_confirmed_correct === false ? 'User Marked as Incorrect' : 
+                           'No User Confirmation' }}
+                      </div>
+                    </div>
+                    <div>
+                      <span class="text-gray-600 font-medium">Submitted On:</span>
+                      <div class="font-semibold text-gray-800 mt-1">{{ formatDateTime(imageData.uploaded_at) }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- No Feedback Available -->
+              <div *ngIf="!imageData?.user_feedback" class="text-center py-12">
+                <div class="text-gray-400 text-6xl mb-4">💭</div>
+                <h4 class="text-xl font-medium text-gray-600 mb-3">No User Verification Available</h4>
+                <p class="text-gray-500 mb-2">This image hasn't been verified by users yet.</p>
+                <p class="text-sm text-gray-400">User verification includes confirmation of AI prediction accuracy and optional feedback comments.</p>
+              </div>
             </div>
           </div>
         </div>

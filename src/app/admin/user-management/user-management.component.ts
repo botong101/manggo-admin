@@ -39,6 +39,7 @@ export class UserManagementComponent implements OnInit {
   imageTypeFilter: string = '';
   sortOrder: 'asc' | 'desc' = 'desc';
   locationFilter: string = '';
+  statusFilter: string = '';
   registrationFilter: string = '';
   imageCountFilter: string = '';
   
@@ -146,7 +147,19 @@ export class UserManagementComponent implements OnInit {
       });
     }
 
-    // Apply status filter
+    // Apply status filter (from dropdown)
+    if (this.statusFilter) {
+      filtered = filtered.filter(folder => {
+        if (this.statusFilter === 'active') {
+          return folder.user.is_active;
+        } else if (this.statusFilter === 'inactive') {
+          return !folder.user.is_active;
+        }
+        return true;
+      });
+    }
+
+    // Apply legacy status filter
     if (this.filterStatus !== 'all') {
       filtered = filtered.filter(folder => {
         if (this.filterStatus === 'active') {
@@ -358,11 +371,6 @@ export class UserManagementComponent implements OnInit {
     return new Date(dateString).toLocaleDateString();
   }
 
-  async refreshData() {
-    await this.loadUsers();
-    await this.loadUserStats();
-  }
-
   // Computed properties for template
   getTotalImages(): number {
     return this.userStats?.total_images || this.userFolders.reduce((total, folder) => total + (folder.user.total_images || 0), 0);
@@ -467,49 +475,36 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  async downloadAllUsersImages() {
+  async toggleUserStatus(user: User, event: Event) {
+    event.stopPropagation(); // Prevent folder expansion
+    
+    const action = user.is_active ? 'disable' : 'enable';
+    const confirmed = confirm(`Are you sure you want to ${action} user "${this.getUserDisplayName(user)}"? This will ${user.is_active ? 'prevent them from logging in' : 'allow them to log in again'}.`);
+    
+    if (!confirmed) return;
+
     try {
-      const totalImages = this.getTotalImages();
-      if (totalImages === 0) {
-        alert('No images found to download.');
-        return;
-      }
-
-      const confirmed = confirm(`This will download ${totalImages} images from all users. Continue?`);
-      if (!confirmed) return;
-
-      await this.downloadService.downloadImagesAsZip([], 'all_users_images.zip');
-    } catch (error) {
-      console.error('Error downloading all user images:', error);
-      alert('Failed to download images. Please try again.');
-    }
-  }
-
-  async downloadFilteredUsersImages() {
-    try {
-      const filteredFolders = this.getFilteredFolders();
-      const userIds = filteredFolders.map(folder => folder.user.id);
+      await this.userManagementService.updateUserStatus(user.id, !user.is_active).toPromise();
       
-      if (userIds.length === 0) {
-        alert('No users match the current filter.');
-        return;
-      }
-
-      const totalImages = filteredFolders.reduce((total, folder) => total + (folder.user.total_images || 0), 0);
+      // Update the user status in the local array
+      user.is_active = !user.is_active;
       
-      if (totalImages === 0) {
-        alert('No images found for filtered users.');
-        return;
+      // Update user stats
+      if (user.is_active) {
+        this.userStats!.active_users++;
+        this.userStats!.inactive_users--;
+      } else {
+        this.userStats!.active_users--;
+        this.userStats!.inactive_users++;
       }
-
-      const confirmed = confirm(`This will download ${totalImages} images from ${userIds.length} filtered users. Continue?`);
-      if (!confirmed) return;
-
-      // Use the mango disease service to download images by user IDs
-      await this.downloadService.downloadImagesAsZip([], 'filtered_users_images.zip');
+      
+      // Show success message
+      const statusText = user.is_active ? 'enabled' : 'disabled';
+      alert(`User "${this.getUserDisplayName(user)}" has been ${statusText} successfully.`);
+      
     } catch (error) {
-      console.error('Error downloading filtered user images:', error);
-      alert('Failed to download images. Please try again.');
+      console.error('Error updating user status:', error);
+      alert('Failed to update user status. Please try again.');
     }
   }
 }

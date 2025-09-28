@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { MangoDiseaseService, MangoImage } from '../../services/mango-disease.service';
 import { DownloadService } from '../../services/download.service';
 import { AuthService } from '../../services/auth.service';
@@ -13,7 +14,7 @@ interface VerifiedDiseaseFolder {
   expanded: boolean;
   diseaseType: 'leaf' | 'fruit' | 'unknown';
   downloading: boolean;
-  verificationStatus?: 'all' | 'verified' | 'unverified';
+  verificationStatus?: 'all' | 'verified' | 'unverified' | 'unknown';
 }
 
 interface MainFolder {
@@ -22,7 +23,7 @@ interface MainFolder {
   expanded: boolean;
   subFolders: VerifiedDiseaseFolder[];
   originalSubFolders: VerifiedDiseaseFolder[]; // Store original unfiltered data
-  type: 'all' | 'verified' | 'unverified';
+  type: 'all' | 'verified' | 'unverified' | 'unknown';
 }
 
 @Component({
@@ -38,10 +39,14 @@ export class VerifiedImagesComponent implements OnInit {
   error: string | null = null;
   totalVerifiedCount = 0;
   totalUnverifiedCount = 0;
+  totalUnknownCount = 0;
   totalAllCount = 0;
   selectedImages: Set<number> = new Set();
   downloadingAll = false;
   updatingSelected = false;
+  
+  // Confidence threshold for unknown images
+  private readonly UNKNOWN_CONFIDENCE_THRESHOLD = 50; // Images below 50% confidence are considered unknown
   
   // Filter options
   filterType: 'all' | 'leaf' | 'fruit' = 'all';
@@ -70,9 +75,9 @@ export class VerifiedImagesComponent implements OnInit {
       const timestamp = new Date().getTime();
       
       // Fetch all images (both verified and unverified) with a larger page size
-      const response = await this.mangoDiseaseService.getClassifiedImages(1, 5000, { 
+      const response = await firstValueFrom(this.mangoDiseaseService.getClassifiedImages(1, 5000, { 
         _t: timestamp
-      }).toPromise();
+      }));
 
       if (response && response.images) {
         console.log('API Response - First few images:', response.images.slice(0, 3).map(img => ({
@@ -84,15 +89,34 @@ export class VerifiedImagesComponent implements OnInit {
         
         this.totalAllCount = response.images.length;
         
-        // Separate verified and unverified images
-        const verifiedImages = response.images.filter(img => img.is_verified);
-        const unverifiedImages = response.images.filter(img => !img.is_verified);
+        // Separate images by confidence threshold and verification status
+        const unknownImages = response.images.filter(img => {
+          const confidence = this.getConfidenceScore(img);
+          console.log(`Image ${img.id}: confidence = ${confidence}, threshold = ${this.UNKNOWN_CONFIDENCE_THRESHOLD}`);
+          return confidence < this.UNKNOWN_CONFIDENCE_THRESHOLD;
+        });
+        const knownImages = response.images.filter(img => {
+          const confidence = this.getConfidenceScore(img);
+          return confidence >= this.UNKNOWN_CONFIDENCE_THRESHOLD;
+        });
+        
+        const verifiedImages = knownImages.filter(img => img.is_verified);
+        const unverifiedImages = knownImages.filter(img => !img.is_verified);
+        
+        console.log(`Categorization results:`, {
+          total: response.images.length,
+          unknown: unknownImages.length,
+          known: knownImages.length,
+          verified: verifiedImages.length,
+          unverified: unverifiedImages.length
+        });
         
         this.totalVerifiedCount = verifiedImages.length;
         this.totalUnverifiedCount = unverifiedImages.length;
+        this.totalUnknownCount = unknownImages.length;
         
         // Create main folder structure
-        this.createMainFolders(response.images, verifiedImages, unverifiedImages);
+        this.createMainFolders(response.images, verifiedImages, unverifiedImages, unknownImages);
         
         // Force change detection to update UI
         this.cdr.detectChanges();
@@ -114,10 +138,11 @@ export class VerifiedImagesComponent implements OnInit {
     }
   }
 
-  createMainFolders(allImages: MangoImage[], verifiedImages: MangoImage[], unverifiedImages: MangoImage[]) {
+  createMainFolders(allImages: MangoImage[], verifiedImages: MangoImage[], unverifiedImages: MangoImage[], unknownImages: MangoImage[]) {
     const allSubFolders = this.groupImagesByDisease(allImages, 'all');
     const verifiedSubFolders = this.groupImagesByDisease(verifiedImages, 'verified');
     const unverifiedSubFolders = this.groupImagesByDisease(unverifiedImages, 'unverified');
+    const unknownSubFolders = this.groupImagesByDisease(unknownImages, 'unknown');
     
     this.mainFolders = [
       {
@@ -143,6 +168,14 @@ export class VerifiedImagesComponent implements OnInit {
         type: 'unverified',
         subFolders: [...unverifiedSubFolders], // Copy for filtering
         originalSubFolders: unverifiedSubFolders // Original data
+      },
+      {
+        name: 'Unknown Images',
+        count: unknownImages.length,
+        expanded: false,
+        type: 'unknown',
+        subFolders: [...unknownSubFolders], // Copy for filtering
+        originalSubFolders: unknownSubFolders // Original data
       }
     ];
     
@@ -150,7 +183,7 @@ export class VerifiedImagesComponent implements OnInit {
     this.diseaseFolders = this.mainFolders[0].subFolders;
   }
 
-  groupImagesByDisease(images: MangoImage[], verificationStatus: 'all' | 'verified' | 'unverified'): VerifiedDiseaseFolder[] {
+  groupImagesByDisease(images: MangoImage[], verificationStatus: 'all' | 'verified' | 'unverified' | 'unknown'): VerifiedDiseaseFolder[] {
     const diseaseMap = new Map<string, MangoImage[]>();
 
     // Filter by date range if specified
@@ -287,7 +320,7 @@ export class VerifiedImagesComponent implements OnInit {
       
       for (const imageId of imageIds) {
         try {
-          const response = await this.mangoDiseaseService.updateImageVerification(imageId, true).toPromise();
+          const response = await firstValueFrom(this.mangoDiseaseService.updateImageVerification(imageId, true));
           
           if (response && response.success) {
             successCount++;
@@ -344,7 +377,7 @@ export class VerifiedImagesComponent implements OnInit {
       
       for (const imageId of imageIds) {
         try {
-          const response = await this.mangoDiseaseService.updateImageVerification(imageId, false).toPromise();
+          const response = await firstValueFrom(this.mangoDiseaseService.updateImageVerification(imageId, false));
           
           if (response && response.success) {
             successCount++;
@@ -540,11 +573,13 @@ export class VerifiedImagesComponent implements OnInit {
     const allImagesFolder = filteredFolders.find(f => f.type === 'all');
     const verifiedFolder = filteredFolders.find(f => f.type === 'verified');
     const unverifiedFolder = filteredFolders.find(f => f.type === 'unverified');
+    const unknownFolder = filteredFolders.find(f => f.type === 'unknown');
 
     return {
       total: allImagesFolder?.count || 0,
       verified: verifiedFolder?.count || 0,
       unverified: unverifiedFolder?.count || 0,
+      unknown: unknownFolder?.count || 0,
       isFiltered: this.hasActiveFilters()
     };
   }
@@ -976,5 +1011,24 @@ export class VerifiedImagesComponent implements OnInit {
       console.error('Error downloading image:', error);
       alert('Failed to download image. Please try again.');
     }
+  }
+
+  // Helper method to get confidence score with proper formatting
+  getConfidenceScore(image: MangoImage): number {
+    if (image.confidence_score) {
+      // If confidence_score is between 0 and 1, convert to percentage
+      if (image.confidence_score <= 1) {
+        return image.confidence_score * 100;
+      }
+      // If already a percentage, return as is
+      return image.confidence_score;
+    }
+    return 0;
+  }
+
+  // Helper method to check if all images in a folder are selected
+  isAllInFolderSelected(folder: VerifiedDiseaseFolder): boolean {
+    if (folder.images.length === 0) return false;
+    return folder.images.every(image => this.selectedImages.has(image.id));
   }
 }

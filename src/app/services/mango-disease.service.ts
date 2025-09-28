@@ -34,7 +34,17 @@ export interface MangoImage {
   is_verified?: boolean; // Add this for template compatibility
   verified_date?: string | null; // Add this for template compatibility
   notes?: string; // Add this for template compatibility
+  user_feedback?: string; // Add this for user feedback from analysis
+  user_confirmed_correct?: boolean | null; // Add this for user confirmation during analysis
   hasError?: boolean; // Add this for error state tracking
+  // Location data from EXIF
+  latitude?: number;
+  longitude?: number;
+  location_accuracy?: number;
+  location_consent_given?: boolean;
+  location_accuracy_confirmed?: boolean; // Whether user confirmed location as accurate
+  location_address?: string;
+  location_source?: string;
 }
 
 export interface DiseaseStats {
