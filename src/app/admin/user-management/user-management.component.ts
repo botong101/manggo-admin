@@ -372,10 +372,6 @@ export class UserManagementComponent implements OnInit {
   }
 
   // Computed properties for template
-  getTotalImages(): number {
-    return this.userStats?.total_images || this.userFolders.reduce((total, folder) => total + (folder.user.total_images || 0), 0);
-  }
-
   getAverageImagesPerUser(): number {
     return this.userStats?.average_images_per_user || 0;
   }
@@ -454,26 +450,7 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  async downloadUserImages(user: User, folder: UserFolder) {
-    try {
-      if (folder.images.length === 0) {
-        await this.loadUserImages(folder);
-      }
 
-      if (folder.images.length === 0) {
-        alert('No images found for this user.');
-        return;
-      }
-
-      const userName = this.getUserDisplayName(user);
-      const filename = `${userName}_images.zip`;
-      
-      await this.downloadService.downloadUserImages(user.id, filename);
-    } catch (error) {
-      console.error('Error downloading user images:', error);
-      alert('Failed to download user images. Please try again.');
-    }
-  }
 
   async toggleUserStatus(user: User, event: Event) {
     event.stopPropagation(); // Prevent folder expansion

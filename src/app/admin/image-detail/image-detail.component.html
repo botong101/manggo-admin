@@ -191,7 +191,7 @@
         <!-- Overview Tab -->
         <div *ngIf="activeTab === 'overview'" class="space-y-6">
           <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Image Overview</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Image Overview</h3>
             
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 p-4 rounded-lg">
@@ -231,7 +231,7 @@
           
           <!-- Notes Section -->
           <div *ngIf="imageData.notes">
-            <h4 class="text-md font-semibold text-gray-800 mb-2">📝 Notes</h4>
+            <h4 class="text-md font-semibold text-gray-800 mb-2">Notes</h4>
             <div class="bg-blue-50 p-4 rounded-lg">
               <p class="text-gray-700">{{ imageData.notes }}</p>
             </div>
@@ -239,7 +239,7 @@
           
           <!-- User Information -->
           <div *ngIf="imageData.user">
-            <h4 class="text-md font-semibold text-gray-800 mb-2">👤 Uploaded By</h4>
+            <h4 class="text-md font-semibold text-gray-800 mb-2">Uploaded By</h4>
             <div class="bg-gray-50 p-4 rounded-lg">
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -266,11 +266,141 @@
         <!-- Prediction Details Tab -->
         <div *ngIf="activeTab === 'prediction'" class="space-y-6">
           <div *ngIf="predictionData">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">🧠 AI Prediction Analysis</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">AI Prediction Analysis</h3>
+            
+            <!-- User Selected Symptoms Section -->
+            <div *ngIf="imageData?.selected_symptoms || imageData?.primary_symptoms || imageData?.alternative_symptoms" class="mb-6">
+              <h4 class="text-md font-semibold text-gray-800 mb-3">User Selected Symptoms</h4>
+              
+              <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <!-- User Confirmation Status -->
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center">
+                    <i class="fas fa-user-check text-blue-600 mr-2"></i>
+                    <span class="font-medium text-blue-800">User Verification Status:</span>
+                  </div>
+                  <div class="flex items-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                          [class.bg-green-100]="imageData.user_confirmed_correct === true"
+                          [class.text-green-800]="imageData.user_confirmed_correct === true"
+                          [class.bg-red-100]="imageData.user_confirmed_correct === false"
+                          [class.text-red-800]="imageData.user_confirmed_correct === false"
+                          [class.bg-yellow-100]="imageData.user_confirmed_correct === null && ((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0))"
+                          [class.text-yellow-800]="imageData.user_confirmed_correct === null && ((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0))"
+                          [class.bg-gray-100]="imageData.user_confirmed_correct === null && !((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0))"
+                          [class.text-gray-800]="imageData.user_confirmed_correct === null && !((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0))">
+                      <i class="fas mr-1" 
+                         [class.fa-check-circle]="imageData.user_confirmed_correct === true"
+                         [class.fa-times-circle]="imageData.user_confirmed_correct === false"
+                         [class.fa-clock]="imageData.user_confirmed_correct === null && ((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0))"
+                         [class.fa-question-circle]="imageData.user_confirmed_correct === null && !((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0))"></i>
+                      {{ imageData.user_confirmed_correct === true ? 'Symptoms Confirmed' : 
+                         imageData.user_confirmed_correct === false ? 'Symptoms Not Matching' : 
+                         ((imageData.primary_symptoms && imageData.primary_symptoms.length > 0) || (imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0) || (imageData.selected_symptoms && imageData.selected_symptoms.length > 0)) ? 'Symptoms Selected - Pending Verification' :
+                         'No Symptoms Selected' }}
+                    </span>
+                  </div>
+                </div>
+                
+                <!-- Primary Disease Symptoms -->
+                <div *ngIf="imageData.primary_symptoms && imageData.primary_symptoms.length > 0" class="mb-4">
+                  <h5 class="text-sm font-semibold text-green-700 mb-2 flex items-center">
+                    <i class="fas fa-leaf mr-2"></i>
+                    Primary Disease Symptoms
+                    <span class="ml-2 px-2 py-1 bg-green-200 text-green-800 rounded-full text-xs font-medium">
+                      {{ imageData.detected_disease || imageData.predicted_class || 'Primary Disease' }}
+                    </span>
+                  </h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div *ngFor="let symptom of imageData.primary_symptoms" 
+                         class="bg-green-100 text-green-800 px-3 py-2 rounded-lg text-sm border border-green-200">
+                      <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                          <i class="fas fa-check-circle mr-2"></i>{{ symptom }}
+                        </div>
+                        <span class="ml-2 px-1 py-0.5 bg-green-200 text-green-700 rounded text-xs font-medium whitespace-nowrap">
+                          {{ imageData.detected_disease || imageData.predicted_class || 'Primary' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Alternative Disease Symptoms -->
+                <div *ngIf="imageData.alternative_symptoms && imageData.alternative_symptoms.length > 0" class="mb-4">
+                  <h5 class="text-sm font-semibold text-orange-700 mb-2 flex items-center">
+                    <i class="fas fa-search-plus mr-2"></i>
+                    Alternative Disease Symptoms
+                    <span class="ml-2 px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs font-medium">
+                      Other Diseases
+                    </span>
+                  </h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div *ngFor="let symptom of imageData.alternative_symptoms" 
+                         class="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg text-sm border border-orange-200">
+                      <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                          <i class="fas fa-check-circle mr-2"></i>{{ symptom }}
+                        </div>
+                        <span class="ml-2 px-1 py-0.5 bg-orange-200 text-orange-700 rounded text-xs font-medium whitespace-nowrap">
+                          Alternative
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- All Selected Symptoms (fallback) -->
+                <div *ngIf="imageData.selected_symptoms && imageData.selected_symptoms.length > 0 && (!imageData.primary_symptoms || imageData.primary_symptoms.length === 0) && (!imageData.alternative_symptoms || imageData.alternative_symptoms.length === 0)">
+                  <h5 class="text-sm font-semibold text-blue-700 mb-2 flex items-center">
+                    <i class="fas fa-list-check mr-2"></i>
+                    All Selected Symptoms
+                    <span class="ml-2 px-2 py-1 bg-blue-200 text-blue-800 rounded-full text-xs font-medium">
+                      {{ imageData.detected_disease || imageData.predicted_class || 'Mixed Sources' }}
+                    </span>
+                  </h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div *ngFor="let symptom of imageData.selected_symptoms" 
+                         class="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm border border-blue-200">
+                      <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                          <i class="fas fa-check-circle mr-2"></i>{{ symptom }}
+                        </div>
+                        <span class="ml-2 px-1 py-0.5 bg-blue-200 text-blue-700 rounded text-xs font-medium whitespace-nowrap">
+                          {{ imageData.detected_disease || imageData.predicted_class || 'General' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Symptoms Summary -->
+                <div class="mt-4 pt-4 border-t border-blue-200">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="bg-white p-3 rounded-lg border">
+                      <div class="text-lg font-bold text-green-600">{{ (imageData.primary_symptoms || []).length }}</div>
+                      <div class="text-xs text-gray-600">Primary Symptoms</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border">
+                      <div class="text-lg font-bold text-orange-600">{{ (imageData.alternative_symptoms || []).length }}</div>
+                      <div class="text-xs text-gray-600">Alternative Symptoms</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border">
+                      <div class="text-lg font-bold text-blue-600">{{ (imageData.selected_symptoms || []).length }}</div>
+                      <div class="text-xs text-gray-600">Total Selected</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border">
+                      <div class="text-lg font-bold text-gray-600">{{ imageData.detected_disease || imageData.predicted_class || 'N/A' }}</div>
+                      <div class="text-xs text-gray-600">Detected Disease</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             
             <!-- Primary Prediction -->
             <div class="mb-6">
-              <h4 class="text-md font-semibold text-gray-800 mb-3">🎯 Primary Prediction</h4>
+              <h4 class="text-md font-semibold text-gray-800 mb-3">Primary Prediction</h4>
               <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
                 <div class="flex items-center justify-between mb-4">
                   <div>
@@ -288,15 +418,23 @@
                 </div>
                 
                 <div class="bg-white p-4 rounded-lg">
-                  <h6 class="font-semibold text-gray-800 mb-2">💡 Treatment Recommendation</h6>
-                  <p class="text-gray-700">{{ predictionData.data.primary_prediction.treatment }}</p>
+                  <h6 class="font-semibold text-gray-800 mb-2">Treatment Recommendation</h6>
+                  <p class="text-gray-700">
+                    {{ predictionData.data.primary_prediction.treatment || 'Treatment information is being updated. Please consult with an agricultural expert for specific recommendations.' }}
+                  </p>
+                  
+                  <!-- Debug information (remove in production) -->
+                  <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800" 
+                       *ngIf="!predictionData.data.primary_prediction.treatment">
+                    <strong>Debug:</strong> Disease name: "{{ predictionData.data.primary_prediction.disease }}"
+                  </div>
                 </div>
               </div>
             </div>
             
             <!-- Top 3 Predictions -->
             <div class="mb-6">
-              <h4 class="text-md font-semibold text-gray-800 mb-3">📊 Alternative Predictions</h4>
+              <h4 class="text-md font-semibold text-gray-800 mb-3">Alternative Predictions</h4>
               <div class="space-y-3">
                 <div *ngFor="let prediction of predictionData.data.top_3_predictions; let i = index" 
                      class="bg-gray-50 p-4 rounded-lg border" 
@@ -320,7 +458,7 @@
             
             <!-- Prediction Summary -->
             <div>
-              <h4 class="text-md font-semibold text-gray-800 mb-3">📈 Analysis Summary</h4>
+              <h4 class="text-md font-semibold text-gray-800 mb-3">Analysis Summary</h4>
               <div class="bg-blue-50 p-4 rounded-lg">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div class="text-center">
@@ -349,7 +487,7 @@
         <!-- Technical Tab -->
         <div *ngIf="activeTab === 'technical'" class="space-y-6">
           <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">⚙️ Technical Information</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Technical Information</h3>
             
             <!-- Image Technical Details -->
             <div class="bg-white p-6 rounded-lg border border-gray-200 mb-6">
@@ -566,7 +704,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
                   <div class="text-sm text-purple-700 mb-1">Model Architecture</div>
-                  <div class="font-medium text-gray-900">EfficientNetB0</div>
+                  <div class="font-medium text-gray-900">{{ getFormattedModelName() }}</div>
                 </div>
                 
                 <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
@@ -614,7 +752,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-gray-50 p-4 rounded-lg">
                   <div class="text-sm text-gray-600 mb-1">Model Used</div>
-                  <div class="font-mono text-sm">{{ predictionData.data.model_used }}-efficientnetb0</div>
+                  <div class="font-mono text-sm">{{ getFormattedModelName() }}</div>
                 </div>
                 
                 <div class="bg-gray-50 p-4 rounded-lg" *ngIf="predictionData.data.model_path">
@@ -663,7 +801,7 @@
         <!-- Feedback Tab -->
         <div *ngIf="activeTab === 'feedback'" class="space-y-6">
           <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">💬 User Verification & Feedback</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">User Verification & Feedback</h3>
             
             <div *ngIf="userConfirmation" class="space-y-6">
               
@@ -832,21 +970,6 @@
                 
                 <div class="mt-4 bg-gray-50 p-3 rounded-lg">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span class="text-gray-600 font-medium">User Confirmation Status:</span>
-                      <div class="font-semibold mt-1" 
-                           [class.text-green-600]="imageData.user_confirmed_correct === true"
-                           [class.text-red-600]="imageData.user_confirmed_correct === false"
-                           [class.text-gray-600]="imageData.user_confirmed_correct === null">
-                        <i class="fas mr-1" 
-                           [class.fa-check-circle]="imageData.user_confirmed_correct === true"
-                           [class.fa-times-circle]="imageData.user_confirmed_correct === false"
-                           [class.fa-question-circle]="imageData.user_confirmed_correct === null"></i>
-                        {{ imageData.user_confirmed_correct === true ? 'User Marked as Verified' : 
-                           imageData.user_confirmed_correct === false ? 'User Marked as Incorrect' : 
-                           'No User Confirmation' }}
-                      </div>
-                    </div>
                     <div>
                       <span class="text-gray-600 font-medium">Submitted On:</span>
                       <div class="font-semibold text-gray-800 mt-1">{{ formatDateTime(imageData.uploaded_at) }}</div>

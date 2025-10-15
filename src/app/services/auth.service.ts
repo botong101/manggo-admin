@@ -30,6 +30,8 @@ export class AuthService {
   private apiUrl = environment.apiUrl;
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasToken());
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  private currentUserSubject = new BehaviorSubject<any>(this.getCurrentUser());
+  public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -48,7 +50,9 @@ export class AuthService {
           if (response.success && response.access) {
             this.setToken(response.access);
             this.setRefreshToken(response.refresh);
+            this.setCurrentUser(response.user);
             this.isAuthenticatedSubject.next(true);
+            this.currentUserSubject.next(response.user);
           }
         }),
         catchError((error: HttpErrorResponse) => {
@@ -62,8 +66,10 @@ export class AuthService {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('current_user');
     }
     this.isAuthenticatedSubject.next(false);
+    this.currentUserSubject.next(null);
   }
 
   getToken(): string | null {
@@ -73,9 +79,23 @@ export class AuthService {
     return null;
   }
 
+  getCurrentUser(): any {
+    if (isPlatformBrowser(this.platformId)) {
+      const userStr = localStorage.getItem('current_user');
+      return userStr ? JSON.parse(userStr) : null;
+    }
+    return null;
+  }
+
   private setToken(token: string): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('access_token', token);
+    }
+  }
+
+  private setCurrentUser(user: any): void {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('current_user', JSON.stringify(user));
     }
   }
 
@@ -92,7 +112,9 @@ export class AuthService {
   // Method to refresh authentication state
   refreshAuthState(): void {
     const isAuth = this.hasToken();
+    const user = this.getCurrentUser();
     this.isAuthenticatedSubject.next(isAuth);
+    this.currentUserSubject.next(user);
   }
 
   private hasToken(): boolean {

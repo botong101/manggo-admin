@@ -17,6 +17,7 @@ export class AppComponent implements OnInit {
   isMenuOpen = false;
   showNotificationPanel = false;
   unreadNotificationCount = 0;
+  currentUser: any = null;
 
   constructor(
     private authService: AuthService,
@@ -30,6 +31,13 @@ export class AppComponent implements OnInit {
       isAuth => {
         this.isAuthenticated = isAuth;
         this.updateNavigationVisibility();
+      }
+    );
+
+    // Subscribe to current user
+    this.authService.currentUser$.subscribe(
+      user => {
+        this.currentUser = user;
       }
     );
 
@@ -49,6 +57,7 @@ export class AppComponent implements OnInit {
 
     // Force check authentication on init
     this.isAuthenticated = this.authService.isLoggedIn();
+    this.currentUser = this.authService.getCurrentUser();
     this.updateNavigationVisibility();
   }
 
@@ -112,5 +121,39 @@ export class AppComponent implements OnInit {
       day: 'numeric',
       year: 'numeric'
     });
+  }
+
+  getUserDisplayName(): string {
+    if (!this.currentUser) {
+      return 'Admin User';
+    }
+    
+    // Try to get full name from user data, fallback to username
+    const firstName = this.currentUser.first_name || '';
+    const lastName = this.currentUser.last_name || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    
+    return fullName || this.currentUser.username || 'Admin User';
+  }
+
+  getUserEmail(): string {
+    return this.currentUser?.email || 'admin@mangosense.com';
+  }
+
+  getUserInitials(): string {
+    if (!this.currentUser) {
+      return 'A';
+    }
+    
+    const firstName = this.currentUser.first_name || '';
+    const lastName = this.currentUser.last_name || '';
+    
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    } else if (this.currentUser.username) {
+      return this.currentUser.username.charAt(0).toUpperCase();
+    }
+    
+    return 'A';
   }
 }

@@ -244,13 +244,6 @@
 
             <div class="flex items-center space-x-2">
               <button
-                (click)="downloadFolderImages(folder); $event.stopPropagation()"
-                [disabled]="folder.downloading"
-                class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm transition-colors">
-                <i class="fas fa-download mr-1" [class.animate-pulse]="folder.downloading"></i>
-                {{ folder.downloading ? 'Preparing...' : 'Download' }}
-              </button>
-              <button
                 (click)="selectAllInFolder(folder); $event.stopPropagation()"
                 class="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded">
                 Select All

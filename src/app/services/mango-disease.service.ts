@@ -324,54 +324,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Test connection
-  testConnection(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/test-model/`)
-      .pipe(
-        catchError(error => {
-          console.error('Error testing connection:', error);
-          return of({ success: false, error: error.message });
-        })
-      );
-  }
 
-  // Export dataset
-  exportDataset(format: 'csv' | 'json' = 'json'): Observable<Blob> {
-    let params = new HttpParams().set('format', format);
-
-    return this.http.get(`${this.apiUrl}/export-dataset/`, { 
-      params: params,
-      responseType: 'blob'
-    })
-      .pipe(
-        catchError(error => {
-          console.error('Error exporting dataset:', error);
-          throw error;
-        })
-      );
-  }
-
-  // Test media access
-  testMediaAccess(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/test-media/`)
-      .pipe(
-        catchError(error => {
-          console.error('Error testing media access:', error);
-          throw error;
-        })
-      );
-  }
-
-  // Debug specific image URL
-  debugImageUrl(imageId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/debug-image/${imageId}/`)
-      .pipe(
-        catchError(error => {
-          console.error('Error debugging image URL:', error);
-          throw error;
-        })
-      );
-  }
 
   // Get detailed image information
   getImageDetails(imageId: number): Observable<ApiResponse<MangoImage>> {

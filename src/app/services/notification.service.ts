@@ -25,6 +25,9 @@ export class NotificationService {
   private apiUrl = 'http://127.0.0.1:8000/api'; // Your Django API URL
   private notificationsSubject = new BehaviorSubject<NotificationData[]>([]);
   private unreadCountSubject = new BehaviorSubject<number>(0);
+  private pollingInterval: any;
+  private isPolling = false;
+  private pollingIntervalMs = 30000; // 30 seconds
 
   public notifications$ = this.notificationsSubject.asObservable();
   public unreadCount$ = this.unreadCountSubject.asObservable();
@@ -67,14 +70,9 @@ export class NotificationService {
     });
   }
 
-  // Public method to manually refresh notifications (without creating new ones)
+  // Public method to manually refresh notifications (loads both read and unread)
   refreshNotifications(): void {
-    this.loadNotifications(false);  // Don't create new notifications on refresh
-  }
-
-  // Public method to scan for new images and create notifications
-  scanForNewNotifications(): void {
-    this.loadNotifications(true);   // Create new notifications if needed
+    this.loadNotifications(false);  // Load all notifications without creating new ones
   }
 
   markAsRead(notificationId: string): void {
@@ -151,5 +149,84 @@ export class NotificationService {
 
   getNotificationById(id: string): NotificationData | undefined {
     return this.notificationsSubject.value.find(notification => notification.id === id);
+  }
+
+  // Live notification polling methods
+  startPolling(): void {
+    if (this.isPolling) {
+      return; // Already polling
+    }
+
+    this.isPolling = true;
+    // Load notifications immediately when starting
+    this.loadNotifications(false);
+    
+    // Set up interval for automatic polling
+    this.pollingInterval = setInterval(() => {
+      this.loadNotifications(false);
+    }, this.pollingIntervalMs);
+  }
+
+  stopPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+    this.isPolling = false;
+  }
+
+  isCurrentlyPolling(): boolean {
+    return this.isPolling;
+  }
+
+  setPollingInterval(intervalMs: number): void {
+    this.pollingIntervalMs = intervalMs;
+    
+    // If currently polling, restart with new interval
+    if (this.isPolling) {
+      this.stopPolling();
+      this.startPolling();
+    }
+  }
+
+  // Enhanced load method that detects new notifications
+  private checkForNewNotifications(): void {
+    const currentNotifications = this.notificationsSubject.value;
+    const currentIds = new Set(currentNotifications.map(n => n.id));
+    
+    this.http.get<any>(`${this.apiUrl}/notifications/`).subscribe({
+      next: (response) => {
+        const data = response.notifications || response;
+        const notifications: NotificationData[] = data.map((item: any) => ({
+          id: item.id,
+          userId: item.user_id,
+          userName: item.user_name || 'Unknown User',
+          userEmail: (item.user_email || '').replace(/^@/, ''),
+          imageId: item.image_id,
+          imageName: item.image_name,
+          timestamp: item.timestamp,
+          diseaseClassification: item.disease_classification,
+          diseaseType: item.disease_type,
+          detectionType: item.detection_type || (item.disease_type && item.disease_type.toLowerCase().includes('fruit') ? 'fruit' : 'leaf'),
+          confidence: typeof item.confidence === 'string' ? parseFloat(item.confidence) : (item.confidence || 0),
+          isRead: item.is_read || false,
+          imageUrl: item.image_url
+        }));
+        
+        // Check for new notifications
+        const newNotifications = notifications.filter(n => !currentIds.has(n.id));
+        
+        if (newNotifications.length > 0) {
+          console.log(`🔔 ${newNotifications.length} new notification(s) received`);
+          // Optionally emit a new notification event here for UI indicators
+        }
+        
+        this.notificationsSubject.next(notifications);
+        this.updateUnreadCount(notifications);
+      },
+      error: (error) => {
+        console.error('Error checking for new notifications:', error);
+      }
+    });
   }
 }

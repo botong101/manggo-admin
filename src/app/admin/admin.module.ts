@@ -7,7 +7,6 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { ImageDetailComponent } from './image-detail/image-detail.component';
 import { UploadImagesComponent } from './upload-images/upload-images.component';
 import { ModelSettingsComponent } from './model-settings/model-settings.component';
-import { UnverifiedImagesComponent } from './unverified-images/unverified-images.component';
 import { VerifiedImagesComponent } from './verified-images/verified-images.component';
 import { UserConfirmationsComponent } from './user-confirmations/user-confirmations.component';
 import { UnverifiedDiseasesComponent } from './unverified-diseases/unverified-diseases.component';
@@ -20,7 +19,6 @@ import { UserManagementComponent } from './user-management/user-management.compo
     ImageDetailComponent,
     UploadImagesComponent,
     ModelSettingsComponent,
-    UnverifiedImagesComponent,
     VerifiedImagesComponent,
     UserConfirmationsComponent,
     UnverifiedDiseasesComponent,

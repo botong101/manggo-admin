@@ -282,4 +282,51 @@ export class ImageDetailComponent implements OnInit {
     // If neither field is available, return unknown
     return 'unknown';
   }
+
+  getFormattedModelName(): string {
+    // First, try to get the actual model path from the API response
+    const modelPath = this.predictionData?.data?.model_path;
+    
+    if (modelPath) {
+      // Extract model name from the file path
+      const fileName = modelPath.split('/').pop()?.split('\\').pop(); // Handle both / and \ path separators
+      
+      if (fileName) {
+        // Parse specific model file names
+        if (fileName.includes('leaf-mobilenetv2')) {
+          return 'Leaf MobileNetV2';
+        } else if (fileName.includes('fruit-efficientnetb0')) {
+          return 'Fruit EfficientNetB0';
+        } else if (fileName.includes('resnet101')) {
+          return 'Leaf ResNet101';
+        } else if (fileName.includes('efficientnetb0')) {
+          return 'EfficientNetB0';
+        } else if (fileName.includes('mobilenetv2')) {
+          return 'MobileNetV2';
+        } else {
+          // Remove .keras extension and format nicely
+          const modelName = fileName.replace('.keras', '').replace('.h5', '');
+          return modelName.split('-').map((part: string) => 
+            part.charAt(0).toUpperCase() + part.slice(1)
+          ).join(' ');
+        }
+      }
+    }
+    
+    // Fallback to the disease type approach if no model path is available
+    const diseaseType = this.getDiseaseType();
+    
+    switch (diseaseType) {
+      case 'leaf':
+        return 'Leaf MobileNetV2';
+      case 'fruit':
+        return 'Fruit EfficientNetB0';
+      default:
+        return 'EfficientNetB0'; // Default fallback
+    }
+  }
+
+  getModelFilePath(): string {
+    return this.predictionData?.data?.model_path || 'Model path not available';
+  }
 }

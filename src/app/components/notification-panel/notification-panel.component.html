@@ -20,18 +20,21 @@
       </div>
       
       <div class="flex items-center space-x-2">
+        <!-- Live Status Indicator -->
+        <div class="flex items-center space-x-1">
+          <div [class]="isLivePolling() ? 'w-2 h-2 bg-green-400 rounded-full animate-pulse' : 'w-2 h-2 bg-gray-400 rounded-full'"></div>
+          <button (click)="toggleLiveMode()" 
+                  class="text-white hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded text-xs transition-colors"
+                  [title]="isLiveMode ? 'Live notifications ON' : 'Live notifications OFF'">
+            {{ isLiveMode ? 'LIVE' : 'OFF' }}
+          </button>
+        </div>
+        
         <button (click)="refreshNotifications()" 
                 class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
-                title="Refresh notifications (no new scan)">
+                title="Refresh notifications">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-        </button>
-        <button (click)="scanForNewNotifications()" 
-                class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
-                title="Scan for new images and create notifications">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </button>
         <button *ngIf="!isSelectionMode" (click)="toggleSelectionMode()" 

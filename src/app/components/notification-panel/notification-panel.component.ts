@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, NotificationData } from '../../services/notification.service';
 import { Router } from '@angular/router';
@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
   templateUrl: './notification-panel.component.html',
   styleUrls: ['./notification-panel.component.css']
 })
-export class NotificationPanelComponent implements OnInit {
+export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() isVisible = false;
   @Output() close = new EventEmitter<void>();
   @Output() notificationClick = new EventEmitter<NotificationData>();
@@ -21,6 +21,8 @@ export class NotificationPanelComponent implements OnInit {
   selectedNotifications: Set<string> = new Set();
   isSelectionMode = false;
   expandedNotificationId: string | null = null;
+  isLiveMode = true; // Live notifications enabled by default
+  private previousVisibility = false;
 
   constructor(
     private notificationService: NotificationService,
@@ -33,8 +35,31 @@ export class NotificationPanelComponent implements OnInit {
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
     });
-    // Load existing notifications initially when component opens (don't create new ones)
-    this.refreshNotifications();
+    
+    // Initialize visibility tracking
+    this.previousVisibility = this.isVisible;
+    if (this.isVisible) {
+      this.startLiveNotifications();
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Stop live notifications when component is destroyed
+    this.stopLiveNotifications();
+  }
+
+  ngOnChanges(): void {
+    // Handle visibility changes
+    if (this.isVisible !== this.previousVisibility) {
+      if (this.isVisible && this.isLiveMode) {
+        // Panel became visible - start polling
+        this.startLiveNotifications();
+      } else if (!this.isVisible) {
+        // Panel became hidden - stop polling to save resources
+        this.stopLiveNotifications();
+      }
+      this.previousVisibility = this.isVisible;
+    }
   }
 
   onBackClick(): void {
@@ -42,11 +67,18 @@ export class NotificationPanelComponent implements OnInit {
   }
 
   refreshNotifications(): void {
-    this.notificationService.refreshNotifications();  // This won't recreate deleted notifications
-  }
-
-  scanForNewNotifications(): void {
-    this.notificationService.scanForNewNotifications();  // This will create notifications for new images
+    this.notificationService.refreshNotifications();  // Load all notifications (read and unread)
+    
+    // If live mode is off, this is manual refresh, so restart polling briefly
+    if (!this.isLiveMode && this.isVisible) {
+      this.notificationService.startPolling();
+      // Stop after a short delay to allow for immediate updates
+      setTimeout(() => {
+        if (!this.isLiveMode) {
+          this.notificationService.stopPolling();
+        }
+      }, 2000);
+    }
   }
 
   onNotificationClick(notification: NotificationData): void {
@@ -273,5 +305,29 @@ export class NotificationPanelComponent implements OnInit {
   collapseNotification(): void {
     this.expandedNotificationId = null;
     this.selectedNotification = null;
+  }
+
+  // Live notification methods
+  startLiveNotifications(): void {
+    if (this.isLiveMode) {
+      this.notificationService.startPolling();
+    }
+  }
+
+  stopLiveNotifications(): void {
+    this.notificationService.stopPolling();
+  }
+
+  toggleLiveMode(): void {
+    this.isLiveMode = !this.isLiveMode;
+    if (this.isLiveMode) {
+      this.startLiveNotifications();
+    } else {
+      this.stopLiveNotifications();
+    }
+  }
+
+  isLivePolling(): boolean {
+    return this.notificationService.isCurrentlyPolling();
   }
 }
