@@ -28,6 +28,7 @@ export interface MangoImage {
   confidence_score: number;
   disease_type: 'leaf' | 'fruit' | 'unknown';
   model_used?: 'leaf' | 'fruit'; // Add this for the backend's model_used field
+  model_path?: string; // Add this for the actual model file path
   image_size: string;
   processing_time: number;
   client_ip: string;
@@ -114,14 +115,12 @@ export class MangoDiseaseService {
     return this.http.get<{success: boolean, data: DiseaseStats}>(`${this.apiUrl}/disease-statistics/`)
       .pipe(
         map(response => {
-          console.log('Raw API response:', response);
           if (response.success && response.data) {
             return response.data;
           }
           throw new Error('Invalid API response format');
         }),
         catchError(error => {
-          console.error('Error fetching disease statistics:', error);
           // Return fallback data
           return of({
             total_images: 0,
@@ -182,58 +181,30 @@ export class MangoDiseaseService {
     }>(`${this.apiUrl}/classified-images/`, { params })
       .pipe(
         map(response => {
-          console.log('🔍 Raw images API response:', response);
           if (response.success && response.data) {
             // Transform images to add missing properties for template compatibility
             const transformedImages = response.data.images.map(image => {
               const originalImageUrl = image.image_url || image.image;
-              console.log('🖼️ Processing image:', {
-                id: image.id,
-                original_filename: image.original_filename,
-                original_image_field: image.image,
-                image_url_field: image.image_url,
-                selected_url: originalImageUrl
-              });
-              
               let imageUrl = originalImageUrl;
               
               // Use the new custom media serving endpoint for better reliability
               if (imageUrl && !imageUrl.startsWith('http')) {
-                // Get base URL by removing '/api' from the end
                 const baseUrl = this.apiUrl.replace(/\/api$/, '');
-                console.log('🔗 Base URL:', baseUrl);
-                console.log('🔗 Original image URL:', imageUrl);
-                
-                // Extract just the file path for the custom media endpoint
                 let filePath = '';
                 
                 if (imageUrl.startsWith('/media/')) {
-                  // Remove /media/ prefix to get the file path
                   filePath = imageUrl.substring(7); // Remove '/media/'
-                  console.log('✅ Case 1 - extracted from /media/ prefix:', filePath);
                 } else if (imageUrl.startsWith('media/')) {
-                  // Remove media/ prefix
                   filePath = imageUrl.substring(6); // Remove 'media/'
-                  console.log('✅ Case 2 - extracted from media/ prefix:', filePath);
                 } else if (imageUrl.includes('mango_images/')) {
-                  // Extract everything from mango_images/
                   const mangoIndex = imageUrl.indexOf('mango_images/');
                   filePath = imageUrl.substring(mangoIndex);
-                  console.log('✅ Case 3 - extracted from mango_images:', filePath);
                 } else {
-                  // Assume it's already just the file path
                   filePath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
-                  console.log('✅ Case 4 - using as file path:', filePath);
                 }
                 
-                // Use the custom media serving endpoint
                 imageUrl = `${baseUrl}/api/media/${filePath}`;
-                console.log('🎯 Using custom media endpoint:', imageUrl);
-              } else if (imageUrl) {
-                console.log('✅ Already absolute URL:', imageUrl);
               }
-              
-              console.log('🎯 Final image URL:', imageUrl);
               
               return {
                 ...image,
@@ -254,7 +225,6 @@ export class MangoDiseaseService {
           throw new Error('Invalid API response format');
         }),
         catchError(error => {
-          console.error('Error fetching classified images:', error);
           return of({
             images: [],
             pagination: {
@@ -280,7 +250,6 @@ export class MangoDiseaseService {
     return this.http.put<ApiResponse<MangoImage>>(`${this.apiUrl}/classified-images/${imageId}/`, updateData)
       .pipe(
         catchError(error => {
-          console.error('Error updating image verification:', error);
           throw error;
         })
       );
@@ -291,7 +260,6 @@ export class MangoDiseaseService {
     return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/classified-images/${imageId}/`)
       .pipe(
         catchError(error => {
-          console.error('Error deleting image:', error);
           throw error;
         })
       );
@@ -302,7 +270,6 @@ export class MangoDiseaseService {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/classify-image/`, formData)
       .pipe(
         catchError(error => {
-          console.error('Error uploading and classifying image:', error);
           throw error;
         })
       );
@@ -318,7 +285,6 @@ export class MangoDiseaseService {
     return this.http.post<any>(`${this.apiUrl}/classified-images/bulk-update/`, bulkData)
       .pipe(
         catchError(error => {
-          console.error('Error bulk updating images:', error);
           throw error;
         })
       );
@@ -331,7 +297,6 @@ export class MangoDiseaseService {
     return this.http.get<ApiResponse<MangoImage>>(`${this.apiUrl}/classified-images/${imageId}/`)
       .pipe(
         catchError(error => {
-          console.error('Error fetching image details:', error);
           throw error;
         })
       );
@@ -399,6 +364,7 @@ export class MangoDiseaseService {
             prediction_summary: pd?.prediction_summary ?? {},
             saved_image_id: pd?.saved_image_id ?? null,
             model_used: pd?.model_used ?? null,
+            model_path: pd?.model_path ?? null,
             debug_info: pd?.debug_info ?? {}
           },
           timestamp: wrapper?.timestamp ?? new Date().toISOString()
@@ -438,7 +404,6 @@ export class MangoDiseaseService {
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/user-confirmations/`, { params: httpParams })
       .pipe(
         catchError(error => {
-          console.error('Error fetching user confirmations:', error);
           throw error;
         })
       );
@@ -448,21 +413,11 @@ export class MangoDiseaseService {
   getUserConfirmationForImage(imageId: number): Observable<UserConfirmation | null> {
     let httpParams = new HttpParams().set('image_id', imageId.toString()).set('page_size', '1');
     const url = `${this.apiUrl}/user-confirmations/`;
-    
-    console.log('🔍 Getting user confirmation for image:', imageId);
-    console.log('🌐 API URL:', url);
-    console.log('📤 Query params:', httpParams.toString());
 
     return this.http.get<ApiResponse<any>>(url, { params: httpParams })
       .pipe(
-        tap((response: any) => {
-          console.log('📥 Raw API response:', response);
-          console.log('📥 Response success:', response?.success);
-          console.log('📥 Response data:', response?.data);
-        }),
         map((response: any) => {
           if (!response || !response.success || !response.data) {
-            console.log('❌ No valid response data');
             return null;
           }
 
@@ -472,20 +427,14 @@ export class MangoDiseaseService {
             response.data?.results ||
             (Array.isArray(response.data) ? response.data : response.data);
 
-          console.log('🔍 Raw list from response:', rawList);
-
           const list = Array.isArray(rawList) ? rawList : (rawList?.results || rawList?.confirmations || []);
-          console.log('🔍 Processed list:', list);
           
           const conf = list.find((c: any) =>
             (c.image && (c.image.id === imageId || c.image_id === imageId)) ||
             c.image_id === imageId
           );
 
-          console.log('🔍 Found confirmation:', conf);
-
           if (!conf) {
-            console.log('❌ No confirmation found for image', imageId);
             return null;
           }
 
@@ -513,11 +462,9 @@ export class MangoDiseaseService {
           // optional: confidence mapping
           (normalized as any).location_accuracy = conf.location?.accuracy ?? conf.location_accuracy ?? undefined;
 
-          console.log('✅ Normalized confirmation:', normalized);
           return normalized;
         }),
         catchError(error => {
-          console.error('❌ Error fetching confirmation for image:', error);
           return of(null);
         })
       );
@@ -528,7 +475,6 @@ export class MangoDiseaseService {
     return this.http.get<ApiResponse<ConfirmationStats>>(`${this.apiUrl}/confirmation-statistics/`)
       .pipe(
         catchError(error => {
-          console.error('Error fetching confirmation statistics:', error);
           throw error;
         })
       );
@@ -557,7 +503,6 @@ export class MangoDiseaseService {
       responseType: 'blob'
     }).pipe(
       catchError(error => {
-        console.error('Error exporting confirmations:', error);
         throw error;
       })
     );
@@ -575,7 +520,6 @@ export class MangoDiseaseService {
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/confirmations-by-disease/`)
       .pipe(
         catchError(error => {
-          console.error('Error fetching confirmations by disease:', error);
           throw error;
         })
       );
@@ -599,7 +543,6 @@ export class MangoDiseaseService {
     return this.http.get<ApiResponse<MangoImage[]>>(`${this.apiUrl}/classified-images/`, { params: httpParams })
       .pipe(
         catchError(error => {
-          console.error('Error fetching images:', error);
           throw error;
         })
       );
@@ -610,7 +553,6 @@ export class MangoDiseaseService {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/classified-images/${imageId}/verify/`, {})
       .pipe(
         catchError(error => {
-          console.error('Error verifying image:', error);
           throw error;
         })
       );
@@ -623,7 +565,6 @@ export class MangoDiseaseService {
       { responseType: 'blob' }
     ).pipe(
       catchError(error => {
-        console.error('Error downloading images ZIP:', error);
         throw error;
       })
     );
@@ -635,7 +576,6 @@ export class MangoDiseaseService {
       responseType: 'blob'
     }).pipe(
       catchError(error => {
-        console.error('Error downloading image:', error);
         throw error;
       })
     );
@@ -647,7 +587,6 @@ export class MangoDiseaseService {
       responseType: 'blob'
     }).pipe(
       catchError(error => {
-        console.error('Error downloading user images:', error);
         throw error;
       })
     );
@@ -660,7 +599,6 @@ export class MangoDiseaseService {
       responseType: 'blob'
     }).pipe(
       catchError(error => {
-        console.error('Error downloading disease images:', error);
         throw error;
       })
     );
@@ -673,7 +611,6 @@ export class MangoDiseaseService {
       responseType: 'blob'
     }).pipe(
       catchError(error => {
-        console.error('Error downloading verification images:', error);
         throw error;
       })
     );

@@ -12,9 +12,6 @@ export class AuthInterceptor implements HttpInterceptor {
     const token = this.authService.getToken();
     
     // Log all API requests for debugging
-    if (req.url.includes('/api/')) {
-      console.log('🔗 API Request:', req.method, req.url);
-    }
     
     if (token) {
       const authReq = req.clone({
@@ -24,10 +21,7 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(authReq).pipe(
         tap(event => {
           if (event instanceof HttpResponse && req.url.includes('/api/')) {
-            console.log('✅ API Response:', req.url, 'Status:', event.status);
-            if (req.url.includes('classified-images') && event.body) {
-              console.log('📸 Images response data:', event.body);
-            }
+            console.log('API Response:', req.url, 'Status:', event.status);
           }
         })
       );
@@ -36,7 +30,7 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       tap(event => {
         if (event instanceof HttpResponse && req.url.includes('/api/')) {
-          console.log('✅ API Response (no auth):', req.url, 'Status:', event.status);
+          console.log('API Response (no auth):', req.url, 'Status:', event.status);
         }
       })
     );

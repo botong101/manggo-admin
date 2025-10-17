@@ -30,29 +30,19 @@ export class LoginComponent {
       this.isLoading = true;
       this.errorMessage = '';
       
-      console.log('=== FORM SUBMISSION ===');
-      console.log('Form values:', this.loginForm.value);
       
       this.authService.login(this.loginForm.value).subscribe({
         next: (response) => {
           this.isLoading = false;
-          console.log('=== LOGIN COMPONENT RESPONSE ===');
-          console.log('Response received:', response);
           
           if (response && response.success) {
-            console.log('Success! Navigating to dashboard...');
-            this.router.navigate(['/admin/dashboard']).then(success => {
-              console.log('Navigation result:', success);
-            });
+            this.router.navigate(['/admin/dashboard'])
           } else {
-            console.log('Login failed:', response);
             this.errorMessage = response?.error || 'Login failed';
           }
         },
         error: (error) => {
           this.isLoading = false;
-          console.log('=== LOGIN COMPONENT ERROR ===');
-          console.log('Error received:', error);
           
           if (error.status === 0) {
             this.errorMessage = 'Cannot connect to server. Please check if Django is running.';

@@ -74,9 +74,7 @@ export class UserConfirmationsComponent implements OnInit {
         this.stats = statsResponse.data;
       }
 
-      console.log('Loaded confirmation data successfully');
     } catch (error) {
-      console.error('Error loading confirmation data:', error);
       this.error = 'Failed to load user confirmations. Please try again.';
     } finally {
       this.loading = false;

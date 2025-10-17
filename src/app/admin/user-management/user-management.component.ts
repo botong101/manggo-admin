@@ -351,13 +351,7 @@ export class UserManagementComponent implements OnInit {
     return 'unknown';
   }
 
-  getDiseaseTypeIcon(diseaseType: 'leaf' | 'fruit' | 'unknown'): string {
-    switch (diseaseType) {
-      case 'leaf': return '🍃';
-      case 'fruit': return '🥭';
-      default: return '❓';
-    }
-  }
+  
 
   getDiseaseTypeClass(diseaseType: 'leaf' | 'fruit' | 'unknown'): string {
     switch (diseaseType) {
@@ -374,11 +368,6 @@ export class UserManagementComponent implements OnInit {
   // Computed properties for template
   getAverageImagesPerUser(): number {
     return this.userStats?.average_images_per_user || 0;
-  }
-
-  getLocationPercentage(): number {
-    if (!this.userStats || this.userStats.total_users === 0) return 0;
-    return Math.round((this.userStats.users_with_profiles / this.userStats.total_users) * 100);
   }
 
   getUserLocationDisplay(user: User): string {

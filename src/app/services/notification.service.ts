@@ -216,10 +216,6 @@ export class NotificationService {
         // Check for new notifications
         const newNotifications = notifications.filter(n => !currentIds.has(n.id));
         
-        if (newNotifications.length > 0) {
-          console.log(`🔔 ${newNotifications.length} new notification(s) received`);
-          // Optionally emit a new notification event here for UI indicators
-        }
         
         this.notificationsSubject.next(notifications);
         this.updateUnreadCount(notifications);

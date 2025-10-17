@@ -1,0 +1,14 @@
+import { Component, OnInit } from '@angular/core';
+import { MangoDiseaseService, MangoImage } from '../../services/mango-disease.service';
+
+@Component({
+  selector: 'app-unverified-diseases',
+  templateUrl: './unverified-diseases.component.html',
+  styleUrls: ['./unverified-diseases.component.css'],
+  standalone: false
+})
+export class UnverifiedDiseasesComponent implements OnInit {
+  unverifiedDiseases: MangoImage[] = [];
+  loading = true;
+  error: string | null = null;    
+}

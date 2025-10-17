@@ -52,13 +52,11 @@ export class DashboardComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-      console.log('Loading dashboard data...');
 
       // Skip connection test - load data directly
 
       // Load statistics
       const stats = await this.mangoDiseaseService.getDiseaseStatistics().toPromise();
-      console.log('Statistics loaded:', stats);
       
       if (stats) {
         this.stats = stats;
@@ -67,7 +65,6 @@ export class DashboardComponent implements OnInit {
 
       // Load recent images
       const recentImagesResponse = await this.mangoDiseaseService.getClassifiedImages(1, 10).toPromise();
-      console.log('Recent images loaded:', recentImagesResponse);
       
       if (recentImagesResponse) {
         this.recentImages = recentImagesResponse.images; // Fixed: use .images instead of .results
@@ -100,7 +97,6 @@ export class DashboardComponent implements OnInit {
     this.healthyImages = 0;
     this.diseasedImages = 0;
     
-    console.log('Using static fallback data');
   }
 
 
@@ -124,13 +120,11 @@ export class DashboardComponent implements OnInit {
   
   navigateToModelSettings() {
     // Navigate to model settings when available
-    console.log('Navigate to model settings');
   }
 
   async exportDataset() {
     try {
       // Export functionality moved to admin dashboard views
-      console.log('Export dataset functionality will be implemented in backend');
       // TODO: Implement direct backend call for dataset export
       alert('Export functionality will be available in a future update');
     } catch (error) {

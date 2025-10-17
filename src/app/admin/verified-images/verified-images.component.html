@@ -1,3 +1,4 @@
+<!-- Verified Images Page -->
 <div class="min-h-screen bg-gray-50 p-6">
   <!-- Header -->
   <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -224,11 +225,8 @@
               
               <span class="text-lg font-semibold text-gray-900">{{ folder.disease }}</span>
               
-              <span 
-                class="text-xl"
-                [title]="folder.diseaseType === 'leaf' ? 'Leaf Disease' : 'Fruit Disease'">
-                {{ getDiseaseTypeIcon(folder.diseaseType) }}
-              </span>
+              
+              
               
               <span 
                 class="px-2 py-1 rounded-full text-sm"
@@ -272,9 +270,6 @@
                       Image ID
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Filename
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Detection Date
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -307,18 +302,6 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{{ image.id }}
                     </td>
-                    
-                    <!-- Filename -->
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-gray-900 font-medium truncate max-w-xs" [title]="image.original_filename">
-                        {{ image.original_filename }}
-                      </div>
-                      <div class="text-xs text-gray-500 flex items-center mt-1">
-                        {{ getDiseaseTypeIcon(getDiseaseType(image)) }} 
-                        <span class="ml-1">{{ getDiseaseType(image) | titlecase }}</span>
-                      </div>
-                    </td>
-                    
                     <!-- Detection Date -->
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {{ formatDate(image.uploaded_at) }}

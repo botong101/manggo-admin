@@ -12,7 +12,6 @@
         </button>
         <div>
           <h1 class="text-3xl font-bold text-gray-800">Image Details</h1>
-          <p class="text-gray-600" *ngIf="imageData">{{ imageData.original_filename }}</p>
         </div>
       </div>
       
@@ -156,7 +155,7 @@
                   [class.border-transparent]="activeTab !== 'overview'"
                   [class.text-gray-600]="activeTab !== 'overview'"
                   class="px-6 py-3 border-b-2 font-medium text-sm hover:text-green-600 transition-colors">
-            📋 Overview
+            Overview
           </button>
           <button (click)="setActiveTab('prediction')" 
                   [class.border-green-500]="activeTab === 'prediction'"
@@ -164,7 +163,7 @@
                   [class.border-transparent]="activeTab !== 'prediction'"
                   [class.text-gray-600]="activeTab !== 'prediction'"
                   class="px-6 py-3 border-b-2 font-medium text-sm hover:text-green-600 transition-colors">
-            🧠 Prediction Details
+            Prediction Details
           </button>
           <button (click)="setActiveTab('technical')" 
                   [class.border-green-500]="activeTab === 'technical'"
@@ -172,7 +171,7 @@
                   [class.border-transparent]="activeTab !== 'technical'"
                   [class.text-gray-600]="activeTab !== 'technical'"
                   class="px-6 py-3 border-b-2 font-medium text-sm hover:text-green-600 transition-colors">
-            ⚙️ Technical
+            Technical
           </button>
           <button (click)="setActiveTab('feedback')" 
                   [class.border-green-500]="activeTab === 'feedback'"
@@ -180,7 +179,7 @@
                   [class.border-transparent]="activeTab !== 'feedback'"
                   [class.text-gray-600]="activeTab !== 'feedback'"
                   class="px-6 py-3 border-b-2 font-medium text-sm hover:text-green-600 transition-colors">
-            💬 User Feedback
+            User Feedback
           </button>
         </div>
       </div>
@@ -750,11 +749,6 @@
               </h4>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                  <div class="text-sm text-gray-600 mb-1">Model Used</div>
-                  <div class="font-mono text-sm">{{ getFormattedModelName() }}</div>
-                </div>
-                
                 <div class="bg-gray-50 p-4 rounded-lg" *ngIf="predictionData.data.model_path">
                   <div class="text-sm text-gray-600 mb-1">Model Path</div>
                   <div class="font-mono text-xs break-all">{{ predictionData.data.model_path }}</div>
@@ -775,7 +769,7 @@
               
               <!-- Image URL Debug -->
               <div class="mt-6">
-                <h5 class="text-md font-medium text-gray-800 mb-3">🔗 Image URL Debug</h5>
+                <h5 class="text-md font-medium text-gray-800 mb-3">Image URL Debug</h5>
                 <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                   <div class="space-y-3">
                     <div>
@@ -785,10 +779,6 @@
                     <div>
                       <div class="text-sm text-yellow-700 mb-1">Original Path</div>
                       <div class="font-mono text-xs break-all bg-white p-2 rounded border">{{ imageData.image }}</div>
-                    </div>
-                    <div *ngIf="imageData.image_url">
-                      <div class="text-sm text-yellow-700 mb-1">Processed URL</div>
-                      <div class="font-mono text-xs break-all bg-white p-2 rounded border">{{ imageData.image_url }}</div>
                     </div>
                   </div>
                 </div>

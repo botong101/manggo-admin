@@ -21,7 +21,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
   selectedNotifications: Set<string> = new Set();
   isSelectionMode = false;
   expandedNotificationId: string | null = null;
-  isLiveMode = true; // Live notifications enabled by default
+  isLiveMode = false;
   private previousVisibility = false;
 
   constructor(

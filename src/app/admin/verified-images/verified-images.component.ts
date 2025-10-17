@@ -80,19 +80,12 @@ export class VerifiedImagesComponent implements OnInit {
       }));
 
       if (response && response.images) {
-        console.log('API Response - First few images:', response.images.slice(0, 3).map(img => ({
-          id: img.id,
-          predicted_class: img.predicted_class,
-          model_used: img.model_used,
-          disease_type: img.disease_type
-        })));
         
         this.totalAllCount = response.images.length;
         
         // Separate images by confidence threshold and verification status
         const unknownImages = response.images.filter(img => {
           const confidence = this.getConfidenceScore(img);
-          console.log(`Image ${img.id}: confidence = ${confidence}, threshold = ${this.UNKNOWN_CONFIDENCE_THRESHOLD}`);
           return confidence < this.UNKNOWN_CONFIDENCE_THRESHOLD;
         });
         const knownImages = response.images.filter(img => {
@@ -103,13 +96,6 @@ export class VerifiedImagesComponent implements OnInit {
         const verifiedImages = knownImages.filter(img => img.is_verified);
         const unverifiedImages = knownImages.filter(img => !img.is_verified);
         
-        console.log(`Categorization results:`, {
-          total: response.images.length,
-          unknown: unknownImages.length,
-          known: knownImages.length,
-          verified: verifiedImages.length,
-          unverified: unverifiedImages.length
-        });
         
         this.totalVerifiedCount = verifiedImages.length;
         this.totalUnverifiedCount = unverifiedImages.length;
@@ -672,7 +658,6 @@ export class VerifiedImagesComponent implements OnInit {
       });
 
       const allImages = Array.from(uniqueImagesMap.values());
-      console.log(`Processing ${allImages.length} unique images for download all`);
 
       // Check if there are unverified images
       const unverifiedImages = allImages.filter(img => !img.is_verified);
@@ -703,7 +688,6 @@ export class VerifiedImagesComponent implements OnInit {
         diseaseMap.get(folderName)!.push(image);
       });
 
-      console.log(`Grouped into ${diseaseMap.size} disease folders:`, Array.from(diseaseMap.keys()));
 
       // Create folders for each disease with type
       for (const [folderName, images] of diseaseMap.entries()) {
@@ -713,8 +697,6 @@ export class VerifiedImagesComponent implements OnInit {
           console.error(`Failed to create folder for disease: ${folderName}`);
           continue;
         }
-
-        console.log(`Processing ${images.length} images for disease: ${folderName}`);
 
         for (const image of images) {
           try {
@@ -744,16 +726,13 @@ export class VerifiedImagesComponent implements OnInit {
       }
 
       // Generate and download ZIP
-      console.log('Generating ZIP file...');
       const content = await zip.generateAsync({ type: 'blob' });
       const timestamp = new Date().toISOString().split('T')[0];
       const zipFilename = `all_images_${timestamp}.zip`;
       
-      console.log(`Saving ZIP file: ${zipFilename} (${content.size} bytes)`);
       saveAs(content, zipFilename);
       
     } catch (error) {
-      console.error('Error creating master ZIP file:', error);
       this.error = 'Failed to download all images. Please try again.';
     } finally {
       this.downloadingAll = false;
@@ -782,7 +761,6 @@ export class VerifiedImagesComponent implements OnInit {
 
       const selectedImageData = Array.from(uniqueImagesMap.values());
       
-      console.log(`Processing ${selectedImageData.length} unique selected images`);
       
       // Check if there are unverified images in the selection
       const unverifiedImages = selectedImageData.filter(img => !img.is_verified);
@@ -812,7 +790,6 @@ export class VerifiedImagesComponent implements OnInit {
         diseaseMap.get(folderName)!.push(image);
       });
 
-      console.log(`Grouped into ${diseaseMap.size} disease folders:`, Array.from(diseaseMap.keys()));
 
       // Create folders for each disease and download images
       for (const [folderName, images] of diseaseMap.entries()) {
@@ -823,12 +800,10 @@ export class VerifiedImagesComponent implements OnInit {
           continue;
         }
 
-        console.log(`Processing ${images.length} images for disease: ${folderName}`);
 
         for (const image of images) {
           try {
             const imageUrl = this.getImageUrl(image);
-            console.log(`Downloading image: ${image.id} from ${imageUrl}`);
             
             const response = await fetch(imageUrl);
             
@@ -847,7 +822,6 @@ export class VerifiedImagesComponent implements OnInit {
               filename = `${baseName}_unverified${fileExtension}`;
             }
             
-            console.log(`Adding file to ZIP: ${filename} (${blob.size} bytes)`);
             diseaseFolder.file(filename, blob);
           } catch (error) {
             console.error(`Error downloading image ${image.id}:`, error);
@@ -856,16 +830,13 @@ export class VerifiedImagesComponent implements OnInit {
       }
 
       // Generate and download ZIP
-      console.log('Generating ZIP file...');
       const content = await zip.generateAsync({ type: 'blob' });
       const timestamp = new Date().toISOString().split('T')[0];
       const zipFilename = `selected_images_${timestamp}.zip`;
       
-      console.log(`Saving ZIP file: ${zipFilename} (${content.size} bytes)`);
       saveAs(content, zipFilename);
       
     } catch (error) {
-      console.error('Error creating selected images ZIP:', error);
       this.error = 'Failed to download selected images. Please try again.';
     }
   }
@@ -945,10 +916,6 @@ export class VerifiedImagesComponent implements OnInit {
     return `${baseUrl}/api/media/${filePath}`;
   }
 
-  getDiseaseTypeIcon(diseaseType: 'leaf' | 'fruit' | 'unknown' | undefined): string {
-    if (!diseaseType || diseaseType === 'unknown') return '🥭'; // Default icon for mango/unknown
-    return diseaseType === 'leaf' ? '🍃' : '🥭';
-  }
 
   getDiseaseTypeClass(diseaseType: 'leaf' | 'fruit' | 'unknown' | undefined): string {
     if (!diseaseType || diseaseType === 'unknown') return 'text-orange-600'; // Default color for mango/unknown
@@ -957,12 +924,6 @@ export class VerifiedImagesComponent implements OnInit {
 
   // Get disease type - use the disease_type field from the API
   getDiseaseType(image: MangoImage): 'leaf' | 'fruit' | 'unknown' {
-    console.log('getDiseaseType called with:', {
-      id: image.id,
-      predicted_class: image.predicted_class,
-      disease_type: image.disease_type,
-      model_used: image.model_used
-    });
     
     // Use the disease_type field from the backend API (most reliable)
     if (image.disease_type && image.disease_type !== 'unknown') {

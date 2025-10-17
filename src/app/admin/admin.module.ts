@@ -9,7 +9,6 @@ import { UploadImagesComponent } from './upload-images/upload-images.component';
 import { ModelSettingsComponent } from './model-settings/model-settings.component';
 import { VerifiedImagesComponent } from './verified-images/verified-images.component';
 import { UserConfirmationsComponent } from './user-confirmations/user-confirmations.component';
-import { UnverifiedDiseasesComponent } from './unverified-diseases/unverified-diseases.component';
 import { VerifiedDiseasesComponent } from './verified-diseases/verified-diseases.component';
 import { UserManagementComponent } from './user-management/user-management.component';
 
@@ -21,7 +20,6 @@ import { UserManagementComponent } from './user-management/user-management.compo
     ModelSettingsComponent,
     VerifiedImagesComponent,
     UserConfirmationsComponent,
-    UnverifiedDiseasesComponent,
     VerifiedDiseasesComponent,
     UserManagementComponent
   ],

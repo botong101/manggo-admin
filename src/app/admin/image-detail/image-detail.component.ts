@@ -102,7 +102,6 @@ export class ImageDetailComponent implements OnInit {
 
       // Load prediction details
       const predictionResponse = await firstValueFrom(this.mangoDiseaseService.getImagePredictionDetails(this.imageId));
-      console.debug('DEBUG predictionResponse (from service):', predictionResponse);
       if (predictionResponse && predictionResponse.success) {
         this.predictionData = predictionResponse;
       }
@@ -110,19 +109,12 @@ export class ImageDetailComponent implements OnInit {
       // Load user confirmation for this image
       try {
         this.userConfirmation = await firstValueFrom(this.mangoDiseaseService.getUserConfirmationForImage(this.imageId)) || null;
-        if (this.userConfirmation) {
-          console.log('✅ User confirmation loaded:', this.userConfirmation);
-        } else {
-          console.log('❌ No confirmation found for image_id:', this.imageId);
-        }
       } catch (confirmationError) {
-        console.warn('Could not load user confirmation data:', confirmationError);
         // Don't show error for missing confirmation - it's optional
       }
 
       this.loading = false;
     } catch (error) {
-      console.error('Error loading image details:', error);
       this.error = 'Failed to load image details. Please try again.';
       this.loading = false;
     }
@@ -193,25 +185,14 @@ export class ImageDetailComponent implements OnInit {
   getImageUrl(): string {
     if (!this.imageData) return '';
     
-    // Use environment configuration for base URL
     const baseUrl = environment.apiUrl.replace('/api', '');
     const originalUrl = this.imageData.image_url || this.imageData.image;
     
-    console.log('🔍 Image URL Debug:', {
-      baseUrl,
-      originalUrl,
-      environment: environment.apiUrl,
-      imageData: this.imageData
-    });
-    
     if (!originalUrl) {
-      const fallbackUrl = `${baseUrl}/api/media/mango_images/${this.imageData.original_filename}`;
-      console.log('🔗 Using fallback URL:', fallbackUrl);
-      return fallbackUrl;
+      return `${baseUrl}/api/media/mango_images/${this.imageData.original_filename}`;
     }
     
     if (originalUrl.startsWith('http')) {
-      console.log('✅ Already absolute URL:', originalUrl);
       return originalUrl;
     }
     
@@ -228,9 +209,7 @@ export class ImageDetailComponent implements OnInit {
       filePath = originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl;
     }
     
-    const finalUrl = `${baseUrl}/api/media/${filePath}`;
-    console.log('🎯 Final image URL:', finalUrl);
-    return finalUrl;
+    return `${baseUrl}/api/media/${filePath}`;
   }
 
   formatDateTime(dateString: string | null | undefined): string {
@@ -245,41 +224,27 @@ export class ImageDetailComponent implements OnInit {
   }
 
   onImageError(event: any) {
-    console.error('❌ Image failed to load:', event);
-    console.error('❌ Failed URL:', this.getImageUrl());
     this.imageError = true;
   }
 
   onImageLoad(event: any) {
-    console.log('✅ Image loaded successfully:', this.getImageUrl());
     this.imageError = false;
   }
 
   getDiseaseType(): 'leaf' | 'fruit' | 'unknown' {
-    // Use the disease_type field from the API
     const image = this.imageData;
     if (!image) return 'unknown';
     
-    console.log(`Image Detail - Image ${image.id}:`, {
-      model_used: image.model_used,
-      disease_type: image.disease_type,
-      predicted_class: image.predicted_class
-    });
-    
     // Use the disease_type field from the backend API (most reliable)
     if (image.disease_type && image.disease_type !== 'unknown') {
-      console.log(`Image Detail - Using disease_type: ${image.disease_type}`);
       return image.disease_type;
     }
     
     // Fallback to model_used if available
     if (image.model_used) {
-      console.log(`Image Detail - Using model_used: ${image.model_used}`);
       return image.model_used;
     }
     
-    console.log('Image Detail - No disease_type or model_used field, returning unknown');
-    // If neither field is available, return unknown
     return 'unknown';
   }
 
@@ -292,13 +257,19 @@ export class ImageDetailComponent implements OnInit {
       const fileName = modelPath.split('/').pop()?.split('\\').pop(); // Handle both / and \ path separators
       
       if (fileName) {
-        // Parse specific model file names
+        // Parse specific model file names (order matters - more specific patterns first)
         if (fileName.includes('leaf-mobilenetv2')) {
           return 'Leaf MobileNetV2';
         } else if (fileName.includes('fruit-efficientnetb0')) {
           return 'Fruit EfficientNetB0';
-        } else if (fileName.includes('resnet101')) {
+        } else if (fileName.includes('leaf-efficientnetb0')) {
+          return 'Leaf EfficientNetB0';
+        } else if (fileName.includes('leaf-resnet101')) {
           return 'Leaf ResNet101';
+        } else if (fileName.includes('fruit-resnet101')) {
+          return 'Fruit ResNet101';
+        } else if (fileName.includes('resnet101')) {
+          return 'ResNet101';
         } else if (fileName.includes('efficientnetb0')) {
           return 'EfficientNetB0';
         } else if (fileName.includes('mobilenetv2')) {

@@ -98,7 +98,6 @@ export class UserManagementService {
     return this.http.get<any>(`${this.apiUrl}/users/`, { params: httpParams })
       .pipe(
         map(response => {
-          console.log('Raw users API response:', response);
           if (response.success && response.data) {
             // Transform the API response to include location information
             const users = response.data.users.map((user: any) => ({

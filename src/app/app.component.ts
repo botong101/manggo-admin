@@ -31,6 +31,11 @@ export class AppComponent implements OnInit {
       isAuth => {
         this.isAuthenticated = isAuth;
         this.updateNavigationVisibility();
+        
+        // Load notifications when user becomes authenticated
+        if (isAuth) {
+          this.notificationService.loadNotifications();
+        }
       }
     );
 
@@ -59,6 +64,11 @@ export class AppComponent implements OnInit {
     this.isAuthenticated = this.authService.isLoggedIn();
     this.currentUser = this.authService.getCurrentUser();
     this.updateNavigationVisibility();
+    
+    // Load notifications if already authenticated
+    if (this.isAuthenticated) {
+      this.notificationService.loadNotifications();
+    }
   }
 
   updateNavigationVisibility() {

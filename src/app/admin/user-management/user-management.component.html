@@ -16,7 +16,7 @@
   </div>
 
   <!-- Statistics Cards -->
-  <div *ngIf="userStats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+  <div *ngIf="userStats" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     
     <!-- Total Users -->
     <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
@@ -43,23 +43,6 @@
         <div class="bg-green-100 p-3 rounded-full">
           <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Users with Location Data -->
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm font-medium text-gray-600">With Location</p>
-          <p class="text-2xl font-bold text-gray-900">{{ userStats.users_with_profiles | number }}</p>
-          <p class="text-xs text-gray-500">{{ getLocationPercentage() }}% of users</p>
-        </div>
-        <div class="bg-orange-100 p-3 rounded-full">
-          <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
         </div>
       </div>

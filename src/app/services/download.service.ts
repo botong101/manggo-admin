@@ -184,10 +184,6 @@ export class DownloadService {
    * Show download progress (for future enhancement)
    * @param message - Progress message to show
    */
-  showDownloadProgress(message: string): void {
-    // This could be enhanced with a toast notification service
-    console.log(`Download: ${message}`);
-  }
 
   /**
    * Validate image URL before download
