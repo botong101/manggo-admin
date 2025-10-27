@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserManagementService, User, UserWithImages, UserStats } from '../../services/user-management.service';
-import { DownloadService } from '../../services/download.service';
 import { MangoImage } from '../../services/mango-disease.service';
 
 interface UserFolder {
@@ -35,13 +34,6 @@ export class UserManagementComponent implements OnInit {
   // Filters
   searchTerm = '';
   filterStatus: 'all' | 'active' | 'inactive' = 'all';
-  sortBy: 'name' | 'email' | 'images' | 'date' = 'images';
-  imageTypeFilter: string = '';
-  sortOrder: 'asc' | 'desc' = 'desc';
-  locationFilter: string = '';
-  statusFilter: string = '';
-  registrationFilter: string = '';
-  imageCountFilter: string = '';
   
   // Pagination
   currentPage = 1;
@@ -51,7 +43,6 @@ export class UserManagementComponent implements OnInit {
 
   constructor(
     private userManagementService: UserManagementService,
-    private downloadService: DownloadService,
     private router: Router
   ) {}
 
@@ -91,7 +82,6 @@ export class UserManagementComponent implements OnInit {
         
         this.totalUsers = response.pagination.total_count;
         this.totalPages = response.pagination.total_pages;
-        this.sortUsers();
       }
       
       this.loading = false;
@@ -112,109 +102,27 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  sortUsers() {
-    this.userFolders.sort((a, b) => {
-      switch (this.sortBy) {
-        case 'name':
-          const nameA = `${a.user.first_name} ${a.user.last_name}`.trim() || a.user.username;
-          const nameB = `${b.user.first_name} ${b.user.last_name}`.trim() || b.user.username;
-          return nameA.localeCompare(nameB);
-        case 'email':
-          return a.user.email.localeCompare(b.user.email);
-        case 'images':
-          return (b.user.total_images || 0) - (a.user.total_images || 0);
-        case 'date':
-          return new Date(b.user.date_joined).getTime() - new Date(a.user.date_joined).getTime();
-        default:
-          return 0;
-      }
-    });
-  }
-
   getFilteredFolders(): UserFolder[] {
     let filtered = this.userFolders;
 
-    // Apply search filter
+    // Apply search filter only
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(folder => {
         const fullName = `${folder.user.first_name} ${folder.user.last_name}`.toLowerCase();
-        const locationDisplay = this.getUserLocationDisplay(folder.user).toLowerCase();
         return fullName.includes(term) ||
                folder.user.username.toLowerCase().includes(term) ||
-               folder.user.email.toLowerCase().includes(term) ||
-               locationDisplay.includes(term);
+               folder.user.email.toLowerCase().includes(term);
       });
     }
 
-    // Apply status filter (from dropdown)
-    if (this.statusFilter) {
-      filtered = filtered.filter(folder => {
-        if (this.statusFilter === 'active') {
-          return folder.user.is_active;
-        } else if (this.statusFilter === 'inactive') {
-          return !folder.user.is_active;
-        }
-        return true;
-      });
-    }
-
-    // Apply legacy status filter
+    // Apply legacy status filter (if needed)
     if (this.filterStatus !== 'all') {
       filtered = filtered.filter(folder => {
         if (this.filterStatus === 'active') {
           return folder.user.is_active;
         } else {
           return !folder.user.is_active;
-        }
-      });
-    }
-
-    // Apply location filter
-    if (this.locationFilter) {
-      filtered = filtered.filter(folder => {
-        if (this.locationFilter === 'with-location') {
-          return folder.user.profile && (folder.user.profile.province || folder.user.profile.city);
-        } else if (this.locationFilter === 'without-location') {
-          return !folder.user.profile || (!folder.user.profile.province && !folder.user.profile.city);
-        }
-        return true;
-      });
-    }
-
-    // Apply registration filter
-    if (this.registrationFilter) {
-      const now = new Date();
-      filtered = filtered.filter(folder => {
-        const joinDate = new Date(folder.user.date_joined);
-        switch (this.registrationFilter) {
-          case 'last-week':
-            return joinDate > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          case 'last-month':
-            return joinDate > new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          case 'last-3-months':
-            return joinDate > new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Apply image count filter
-    if (this.imageCountFilter) {
-      filtered = filtered.filter(folder => {
-        const imageCount = folder.user.total_images || 0;
-        switch (this.imageCountFilter) {
-          case 'active':
-            return imageCount >= 1;
-          case 'very-active':
-            return imageCount >= 5;
-          case 'super-active':
-            return imageCount >= 10;
-          case 'no-images':
-            return imageCount === 0;
-          default:
-            return true;
         }
       });
     }
@@ -257,10 +165,6 @@ export class UserManagementComponent implements OnInit {
     this.loadUsers();
   }
 
-  onSortChange() {
-    this.sortUsers();
-  }
-
   onSearchChange() {
     // Debounce search
     setTimeout(() => {
@@ -289,77 +193,7 @@ export class UserManagementComponent implements OnInit {
     return fullName || user.username;
   }
 
-  getImageUrl(image: MangoImage): string {
-    const baseUrl = 'http://127.0.0.1:8000';
-    const originalUrl = image.image_url || image.image;
-    
-    if (!originalUrl) {
-      return `${baseUrl}/api/media/mango_images/${image.original_filename}`;
-    }
-    
-    if (originalUrl.startsWith('http')) {
-      return originalUrl;
-    }
-    
-    // Use custom media endpoint
-    let filePath = '';
-    if (originalUrl.startsWith('/media/')) {
-      filePath = originalUrl.substring(7);
-    } else if (originalUrl.startsWith('media/')) {
-      filePath = originalUrl.substring(6);
-    } else if (originalUrl.includes('mango_images/')) {
-      const mangoIndex = originalUrl.indexOf('mango_images/');
-      filePath = originalUrl.substring(mangoIndex);
-    } else {
-      filePath = originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl;
-    }
-    
-    return `${baseUrl}/api/media/${filePath}`;
-  }
 
-  getDiseaseType(image: MangoImage): 'leaf' | 'fruit' | 'unknown' {
-    if (image.model_used) {
-      return image.model_used;
-    }
-    
-    if (image.disease_type && image.disease_type !== 'unknown') {
-      return image.disease_type;
-    }
-    
-    const disease = image.disease_classification || image.predicted_class;
-    if (!disease) return 'unknown';
-    
-    const diseaseLower = disease.toLowerCase();
-    
-    const leafDiseases = [
-      'die back', 'dieback', 'anthracnose', 'powdery mildew', 'bacterial canker',
-      'sooty mold', 'sooty mould', 'cutting weevil', 'gall midge'
-    ];
-    
-    const fruitDiseases = [
-      'black mould rot', 'stem end rot', 'alternaria'
-    ];
-    
-    if (leafDiseases.some(leafDisease => diseaseLower.includes(leafDisease))) {
-      return 'leaf';
-    }
-    
-    if (fruitDiseases.some(fruitDisease => diseaseLower.includes(fruitDisease))) {
-      return 'fruit';
-    }
-    
-    return 'unknown';
-  }
-
-  
-
-  getDiseaseTypeClass(diseaseType: 'leaf' | 'fruit' | 'unknown'): string {
-    switch (diseaseType) {
-      case 'leaf': return 'bg-green-100 text-green-800';
-      case 'fruit': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  }
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();
@@ -417,29 +251,13 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  handleImageError(event: any) {
-    console.warn('Image failed to load:', event.target.src);
-    // event.target.src = 'assets/images/no-image-placeholder.png';
-  }
+
 
   viewAllUserImages(user: User) {
     this.router.navigate(['/admin/verified-images'], { 
       queryParams: { user_id: user.id } 
     });
   }
-
-  // Download methods
-  async downloadImage(image: MangoImage) {
-    try {
-      const imageUrl = this.getImageUrl(image);
-      await this.downloadService.downloadImageWithFetch(imageUrl, image.original_filename);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      alert('Failed to download image. Please try again.');
-    }
-  }
-
-
 
   async toggleUserStatus(user: User, event: Event) {
     event.stopPropagation(); // Prevent folder expansion

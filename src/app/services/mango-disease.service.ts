@@ -141,7 +141,7 @@ export class MangoDiseaseService {
   }
 
   // Get classified images - handle your API's success/data wrapper
-  getClassifiedImages(page: number = 1, pageSize: number = 20, filters?: any): Observable<{
+  getClassifiedImages(page: number = 1, pageSize: number = 5, filters?: any): Observable<{
     images: MangoImage[];
     pagination: {
       page: number;

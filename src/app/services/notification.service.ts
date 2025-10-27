@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface NotificationData {
   id: string;
@@ -22,7 +23,7 @@ export interface NotificationData {
   providedIn: 'root'
 })
 export class NotificationService {
-  private apiUrl = 'http://127.0.0.1:8000/api'; // Your Django API URL
+  private apiUrl = environment.apiUrl; // Your Django API URL
   private notificationsSubject = new BehaviorSubject<NotificationData[]>([]);
   private unreadCountSubject = new BehaviorSubject<number>(0);
   private pollingInterval: any;

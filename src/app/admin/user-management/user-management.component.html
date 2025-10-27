@@ -49,9 +49,9 @@
     </div>
   </div>
 
-  <!-- Filters and Search -->
+  <!-- Search Only -->
   <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 gap-4">
       
       <!-- Search -->
       <div>
@@ -61,96 +61,6 @@
                (input)="filterUsers()" 
                placeholder="Search by name or username..." 
                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-      </div>
-
-      <!-- Image Type Filter -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Image Type</label>
-        <select [(ngModel)]="imageTypeFilter" 
-                (change)="filterUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="">All Types</option>
-          <option value="fruit">Fruit Images</option>
-          <option value="leaf">Leaf Images</option>
-        </select>
-      </div>
-
-      <!-- Sort By -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-        <select [(ngModel)]="sortBy" 
-                (change)="sortUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="name">Name</option>
-          <option value="username">Username</option>
-          <option value="date_joined">Join Date</option>
-          <option value="total_images">Image Count</option>
-        </select>
-      </div>
-
-      <!-- Sort Order -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Order</label>
-        <select [(ngModel)]="sortOrder" 
-                (change)="sortUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
-      </div>
-    </div>
-    
-    <!-- Additional Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-      <!-- User Status Filter -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Account Status</label>
-        <select [(ngModel)]="statusFilter" 
-                (change)="filterUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="">All Users</option>
-          <option value="active">Active Users</option>
-          <option value="inactive">Disabled Users</option>
-        </select>
-      </div>
-
-      <!-- Location Filter -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Location Status</label>
-        <select [(ngModel)]="locationFilter" 
-                (change)="filterUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="">All Users</option>
-          <option value="with-location">With Location Data</option>
-          <option value="without-location">Without Location Data</option>
-        </select>
-      </div>
-      
-      <!-- Recent Activity Filter -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Registration Period</label>
-        <select [(ngModel)]="registrationFilter" 
-                (change)="filterUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="">All Time</option>
-          <option value="last-week">Last Week</option>
-          <option value="last-month">Last Month</option>
-          <option value="last-3-months">Last 3 Months</option>
-        </select>
-      </div>
-      
-      <!-- Image Count Filter -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Image Activity</label>
-        <select [(ngModel)]="imageCountFilter" 
-                (change)="filterUsers()"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="">All Users</option>
-          <option value="active">Has Images (1+)</option>
-          <option value="very-active">Very Active (5+)</option>
-          <option value="super-active">Super Active (10+)</option>
-          <option value="no-images">No Images</option>
-        </select>
       </div>
     </div>
   </div>
@@ -269,50 +179,49 @@
           <span class="ml-3 text-gray-600">Loading images...</span>
         </div>
 
-        <!-- Images Grid -->
-        <div *ngIf="!folder.loading && folder.images.length > 0" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div *ngFor="let image of folder.images" class="group relative">
-            
-            <!-- Image -->
-            <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 group-hover:shadow-lg transition-shadow">
-              <img [src]="image.image_url || image.image" 
-                   [alt]="image.original_filename" 
-                   class="w-full h-full object-cover group-hover:scale-105 transition-transform" 
-                   (error)="handleImageError($event)">
-            </div>
-
-            <!-- Image Overlay -->
-            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center">
-              <div class="flex space-x-2">
-                <button (click)="viewImageDetails(image.id)" 
-                        class="opacity-0 group-hover:opacity-100 bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100 transition-all">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                  </svg>
-                </button>
-                <button (click)="downloadImage(image); $event.stopPropagation()" 
-                        class="opacity-0 group-hover:opacity-100 bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-all">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M7.05 3.05L12 8m4.95-4.95L12 8"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- Image Info -->
-            <div class="mt-2">
-              <p class="text-xs text-gray-600 truncate">{{ image.original_filename }}</p>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs px-2 py-1 rounded-full"
-                      [class]="getImageTypeClass(image.disease_type)">
-                  {{ image.disease_type | titlecase }}
-                </span>
-                <span class="text-xs text-gray-500">{{ formatDate(image.uploaded_at) }}</span>
-              </div>
-              <p class="text-xs text-gray-700 mt-1 truncate">{{ image.predicted_class }}</p>
-            </div>
-          </div>
+        <!-- Images Table -->
+        <div *ngIf="!folder.loading && folder.images.length > 0" class="overflow-x-auto">
+          <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disease</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr *ngFor="let image of folder.images" class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm">
+                  <span class="px-2 py-1 text-xs rounded-full"
+                        [class]="getImageTypeClass(image.disease_type)">
+                    {{ image.disease_type | titlecase }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-900">
+                  <div class="truncate max-w-xs" [title]="image.predicted_class">
+                    {{ image.predicted_class }}
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-900">
+                  <span *ngIf="image.confidence_score" class="font-medium">
+                    {{ (image.confidence_score * 100) | number:'1.1-1' }}%
+                  </span>
+                  <span *ngIf="!image.confidence_score" class="text-gray-400">-</span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">
+                  {{ formatDate(image.uploaded_at) }}
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <button (click)="viewImageDetails(image.id)" 
+                          class="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 transition-colors text-xs">
+                    View Details
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <!-- No Images -->
