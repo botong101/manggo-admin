@@ -141,100 +141,104 @@ export class MangoDiseaseService {
   }
 
   // Get classified images - handle your API's success/data wrapper
-  getClassifiedImages(page: number = 1, pageSize: number = 5, filters?: any): Observable<{
+  // BRUTE FORCE VERSION - More readable for beginners
+  getClassifiedImages(filters?: any): Observable<{
     images: MangoImage[];
-    pagination: {
-      page: number;
-      page_size: number;
-      total_count: number;
-      total_pages: number;
-      has_next: boolean;
-      has_previous: boolean;
-    };
-  }> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('page_size', pageSize.toString());
-
-    // Add filters if provided
+    }> {
+    // Step 1: Create URL parameters for the API request
+    let params = new HttpParams();
+    
+    // Step 2: Add any additional filters to the URL parameters
     if (filters) {
-      Object.keys(filters).forEach(key => {
-        if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
-          params = params.set(key, filters[key].toString());
+      // Loop through each filter property
+      const filterKeys = Object.keys(filters);
+      
+      for (let i = 0; i < filterKeys.length; i++) {
+        const key = filterKeys[i];
+        const value = filters[key];
+        
+        // Only add the filter if it has a valid value
+        if (value !== null && value !== undefined && value !== '') {
+          params = params.set(key, value.toString());
         }
-      });
+      }
     }
 
+    // Step 3: Make the HTTP GET request to the backend API
     return this.http.get<{
       success: boolean;
       data: {
         images: MangoImage[];
-        pagination: {
-          page: number;
-          page_size: number;
-          total_count: number;
-          total_pages: number;
-          has_next: boolean;
-          has_previous: boolean;
-        };
       };
     }>(`${this.apiUrl}/classified-images/`, { params })
       .pipe(
         map(response => {
-          if (response.success && response.data) {
-            // Transform images to add missing properties for template compatibility
-            const transformedImages = response.data.images.map(image => {
-              const originalImageUrl = image.image_url || image.image;
-              let imageUrl = originalImageUrl;
-              
-              // Use the new custom media serving endpoint for better reliability
-              if (imageUrl && !imageUrl.startsWith('http')) {
-                const baseUrl = this.apiUrl.replace(/\/api$/, '');
-                let filePath = '';
-                
-                if (imageUrl.startsWith('/media/')) {
-                  filePath = imageUrl.substring(7); // Remove '/media/'
-                } else if (imageUrl.startsWith('media/')) {
-                  filePath = imageUrl.substring(6); // Remove 'media/'
-                } else if (imageUrl.includes('mango_images/')) {
-                  const mangoIndex = imageUrl.indexOf('mango_images/');
-                  filePath = imageUrl.substring(mangoIndex);
-                } else {
-                  filePath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
-                }
-                
-                imageUrl = `${baseUrl}/api/media/${filePath}`;
-              }
-              
-              return {
-                ...image,
-                image_url: imageUrl,
-                disease_classification: image.predicted_class,
-                upload_date: image.uploaded_at,
-                is_verified: image.is_verified || false,
-                notes: image.notes || '',
-                disease_type: image.disease_type || 'unknown'
-              };
-            });
-
-            return {
-              images: transformedImages,
-              pagination: response.data.pagination
-            };
+          // Step 4: Check if the API response is valid
+          if (!response.success || !response.data) {
+            throw new Error('Invalid API response format');
           }
-          throw new Error('Invalid API response format');
+          
+          // Step 5: Get the images from the response
+          const originalImages = response.data.images;
+          const transformedImages: MangoImage[] = [];
+          
+          // Step 6: Transform each image to add missing properties
+          // Loop through all images one by one
+          for (let i = 0; i < originalImages.length; i++) {
+            const image = originalImages[i];
+  
+            // Step 8: Create a new image object with all required properties
+            const transformedImage: MangoImage = {
+              // Copy all original properties
+              id: image.id,
+              user: image.user,
+              image: image.image,
+              original_filename: image.original_filename,
+              uploaded_at: image.uploaded_at,
+              predicted_class: image.predicted_class,
+              confidence_score: image.confidence_score,
+              disease_type: image.disease_type || 'unknown',
+              image_size: image.image_size,
+              processing_time: image.processing_time,
+              client_ip: image.client_ip,
+              
+              // Add transformed/missing properties for template compatibility
+              disease_classification: image.predicted_class,
+              upload_date: image.uploaded_at,
+              is_verified: image.is_verified || false,
+              notes: image.notes || '',
+              
+              // Optional properties
+              model_used: image.model_used,
+              model_path: image.model_path,
+              verified_date: image.verified_date,
+              user_feedback: image.user_feedback,
+              user_confirmed_correct: image.user_confirmed_correct,
+              hasError: image.hasError,
+              latitude: image.latitude,
+              longitude: image.longitude,
+              location_accuracy: image.location_accuracy,
+              location_consent_given: image.location_consent_given,
+              location_accuracy_confirmed: image.location_accuracy_confirmed,
+              location_address: image.location_address,
+              location_source: image.location_source
+            };
+            
+            // Add the transformed image to the array
+            transformedImages.push(transformedImage);
+          }
+
+          // Step 9: Return the final result with transformed images and pagination
+          return {
+            images: transformedImages,
+          };
         }),
         catchError(error => {
+          // Step 10: Handle any errors by returning empty data
+          console.error('Error fetching classified images:', error);
+          
           return of({
             images: [],
-            pagination: {
-              page: 1,
-              page_size: 20,
-              total_count: 0,
-              total_pages: 0,
-              has_next: false,
-              has_previous: false
-            }
           });
         })
       );

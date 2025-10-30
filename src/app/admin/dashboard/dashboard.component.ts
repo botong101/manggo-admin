@@ -64,7 +64,7 @@ export class DashboardComponent implements OnInit {
       }
 
       // Load recent images
-      const recentImagesResponse = await this.mangoDiseaseService.getClassifiedImages(1, 10).toPromise();
+      const recentImagesResponse = await this.mangoDiseaseService.getClassifiedImages().toPromise();
       
       if (recentImagesResponse) {
         this.recentImages = recentImagesResponse.images; // Fixed: use .images instead of .results

@@ -6,25 +6,11 @@ import { DownloadService } from '../../services/download.service';
 import { AuthService } from '../../services/auth.service';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { VerifiedDiseaseFolder, MainFolder } from './images.interfaces';
+import { FilterService} from './Filter.service';
+import { environment } from '../../../environments/environment';
+import { ButtonsService } from './buttons.service';
 
-interface VerifiedDiseaseFolder {
-  disease: string;
-  count: number;
-  images: MangoImage[];
-  expanded: boolean;
-  diseaseType: 'leaf' | 'fruit' | 'unknown';
-  downloading: boolean;
-  verificationStatus?: 'all' | 'verified' | 'unverified' | 'unknown';
-}
-
-interface MainFolder {
-  name: string;
-  count: number;
-  expanded: boolean;
-  subFolders: VerifiedDiseaseFolder[];
-  originalSubFolders: VerifiedDiseaseFolder[]; // Store original unfiltered data
-  type: 'all' | 'verified' | 'unverified' | 'unknown';
-}
 
 @Component({
   selector: 'app-verified-images',
@@ -32,16 +18,21 @@ interface MainFolder {
   styleUrls: ['./verified-images.component.css'],
   standalone: false
 })
+
 export class VerifiedImagesComponent implements OnInit {
+
   mainFolders: MainFolder[] = [];
   diseaseFolders: VerifiedDiseaseFolder[] = [];
   loading = true;
   error: string | null = null;
+
   totalVerifiedCount = 0;
   totalUnverifiedCount = 0;
   totalUnknownCount = 0;
   totalAllCount = 0;
+
   selectedImages: Set<number> = new Set();
+
   downloadingAll = false;
   updatingSelected = false;
   
@@ -59,7 +50,9 @@ export class VerifiedImagesComponent implements OnInit {
     private downloadService: DownloadService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private authService: AuthService
+    private authService: AuthService,
+    private filterService: FilterService,
+    private buttonsService: ButtonsService
   ) {}
 
   ngOnInit() {
@@ -68,57 +61,84 @@ export class VerifiedImagesComponent implements OnInit {
 
   async loadAllImages() {
     try {
+      // Step 1: Show loading state to user
       this.loading = true;
       this.error = null;
 
-      // Add a timestamp to prevent caching
+      // Step 2: Generate timestamp to prevent browser caching
+      // This ensures we always get fresh data from the server
       const timestamp = new Date().getTime();
       
-      // Fetch all images (both verified and unverified) with a larger page size
-      const response = await firstValueFrom(this.mangoDiseaseService.getClassifiedImages(1, 5000, { 
-        _t: timestamp
-      }));
+      // Step 3: Fetch all images from the backend API
+      // We request 5000 images per page (a large number to get all images)
+      const response = await firstValueFrom(
+        this.mangoDiseaseService.getClassifiedImages({
+          _t: timestamp  // Cache-busting parameter
+        }),
+      );
 
-      if (response && response.images) {
-        
-        this.totalAllCount = response.images.length;
-        
-        // Separate images by confidence threshold and verification status
-        const unknownImages = response.images.filter(img => {
-          const confidence = this.getConfidenceScore(img);
-          return confidence < this.UNKNOWN_CONFIDENCE_THRESHOLD;
-        });
-        const knownImages = response.images.filter(img => {
-          const confidence = this.getConfidenceScore(img);
-          return confidence >= this.UNKNOWN_CONFIDENCE_THRESHOLD;
-        });
-        
-        const verifiedImages = knownImages.filter(img => img.is_verified);
-        const unverifiedImages = knownImages.filter(img => !img.is_verified);
-        
-        
-        this.totalVerifiedCount = verifiedImages.length;
-        this.totalUnverifiedCount = unverifiedImages.length;
-        this.totalUnknownCount = unknownImages.length;
-        
-        // Create main folder structure
-        this.createMainFolders(response.images, verifiedImages, unverifiedImages, unknownImages);
-        
-        // Force change detection to update UI
-        this.cdr.detectChanges();
+      // Step 4: Check if we received valid data
+      if (!response || !response.images) {
+        this.error = 'No images found';
+        this.loading = false;
+        return;
       }
 
+      // Step 5: Get all images from the response
+      const allImages = response.images;
+      this.totalAllCount = allImages.length;
+      
+      // Step 6: Create empty arrays to categorize images
+      const verifiedImages: MangoImage[] = [];
+      const unverifiedImages: MangoImage[] = [];
+      const unknownImages: MangoImage[] = [];
+      
+      // Step 7: Loop through each image and categorize it
+      // We check confidence score and verification status
+      for (let i = 0; i < allImages.length; i++) {
+        const image = allImages[i];
+        const confidence = this.getConfidenceScore(image);
+        
+        // Check if image has low confidence (below 50%)
+        if (confidence < this.UNKNOWN_CONFIDENCE_THRESHOLD) {
+          // This is an unknown/low confidence image
+          unknownImages.push(image);
+        } else {
+          // This is a known/high confidence image
+          // Now check if it's verified or not
+          if (image.is_verified === true) {
+            verifiedImages.push(image);
+          } else {
+            unverifiedImages.push(image);
+          }
+        }
+      }
+      
+      // Step 8: Update the count totals
+      this.totalVerifiedCount = verifiedImages.length;
+      this.totalUnverifiedCount = unverifiedImages.length;
+      this.totalUnknownCount = unknownImages.length;
+      
+      // Step 9: Create the folder structure for display
+      this.createMainFolders(allImages, verifiedImages, unverifiedImages, unknownImages);
+      
+      // Step 10: Force Angular to update the UI
+      this.cdr.detectChanges();
+      
+      // Step 11: Hide loading state
       this.loading = false;
+
     } catch (error) {
       console.error('Error loading images:', error);
       
-      // Only redirect to login on authentication errors
+      // Handle authentication errors (user not logged in)
       if (error && (error as any).status === 401) {
         this.authService.logout(); // Clear stored tokens
-        this.router.navigate(['/login']);
+        this.router.navigate(['/login']); // Redirect to login page
         return;
       }
       
+      // Show error message to user
       this.error = 'Failed to load images. Please try again.';
       this.loading = false;
     }
@@ -278,298 +298,6 @@ export class VerifiedImagesComponent implements OnInit {
     mainFolder.expanded = !mainFolder.expanded;
     this.cdr.detectChanges();
   }
-
-  selectAllInFolder(folder: VerifiedDiseaseFolder) {
-    folder.images.forEach(image => {
-      this.selectedImages.add(image.id);
-    });
-  }
-
-  async verifySelectedImages() {
-    if (this.selectedImages.size === 0) {
-      alert('No images selected');
-      return;
-    }
-
-    const confirmation = confirm(`Are you sure you want to verify ${this.selectedImages.size} selected images?`);
-    if (!confirmation) {
-      return;
-    }
-
-    try {
-      this.updatingSelected = true;
-      const imageIds = Array.from(this.selectedImages);
-      
-      // Update each image individually using the existing updateImageVerification method
-      let successCount = 0;
-      let errorCount = 0;
-      
-      for (const imageId of imageIds) {
-        try {
-          const response = await firstValueFrom(this.mangoDiseaseService.updateImageVerification(imageId, true));
-          
-          if (response && response.success) {
-            successCount++;
-          } else {
-            console.error(`Failed to verify image ${imageId}:`, response);
-            errorCount++;
-          }
-        } catch (error) {
-          console.error(`Error verifying image ${imageId}:`, error);
-          errorCount++;
-        }
-      }
-
-      // Clear selection and reload data
-      this.selectedImages.clear();
-      
-      // Wait a moment for the backend to process the changes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force a complete reload of the data
-      await this.loadAllImages();
-      
-      if (errorCount === 0) {
-        alert(`Successfully verified ${successCount} images`);
-      } else {
-        alert(`Verified ${successCount} images. Failed to verify ${errorCount} images.`);
-      }
-    } catch (error) {
-      console.error('Error verifying images:', error);
-      alert('Failed to verify images. Please try again.');
-    } finally {
-      this.updatingSelected = false;
-    }
-  }
-
-  async unverifySelectedImages() {
-    if (this.selectedImages.size === 0) {
-      alert('No images selected');
-      return;
-    }
-
-    const confirmation = confirm(`Are you sure you want to unverify ${this.selectedImages.size} selected images?`);
-    if (!confirmation) {
-      return;
-    }
-
-    try {
-      this.updatingSelected = true;
-      const imageIds = Array.from(this.selectedImages);
-      
-      // Update each image individually using the existing updateImageVerification method
-      let successCount = 0;
-      let errorCount = 0;
-      
-      for (const imageId of imageIds) {
-        try {
-          const response = await firstValueFrom(this.mangoDiseaseService.updateImageVerification(imageId, false));
-          
-          if (response && response.success) {
-            successCount++;
-          } else {
-            console.error(`Failed to unverify image ${imageId}:`, response);
-            errorCount++;
-          }
-        } catch (error) {
-          console.error(`Error unverifying image ${imageId}:`, error);
-          errorCount++;
-        }
-      }
-
-      // Clear selection and reload data
-      this.selectedImages.clear();
-      
-      // Wait a moment for the backend to process the changes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force a complete reload of the data
-      await this.loadAllImages();
-      
-      if (errorCount === 0) {
-        alert(`Successfully unverified ${successCount} images`);
-      } else {
-        alert(`Unverified ${successCount} images. Failed to unverify ${errorCount} images.`);
-      }
-    } catch (error) {
-      console.error('Error unverifying images:', error);
-      alert('Failed to unverify images. Please try again.');
-    } finally {
-      this.updatingSelected = false;
-    }
-  }
-
-  async deleteSelectedImages() {
-    if (this.selectedImages.size === 0) {
-      alert('No images selected');
-      return;
-    }
-
-    const confirmation = confirm(`Are you sure you want to delete ${this.selectedImages.size} selected images? This action cannot be undone.`);
-    if (!confirmation) {
-      return;
-    }
-
-    try {
-      this.updatingSelected = true;
-      const imageIds = Array.from(this.selectedImages);
-      
-      // Delete each image individually
-      let successCount = 0;
-      let errorCount = 0;
-      
-      for (const imageId of imageIds) {
-        try {
-          const response = await this.mangoDiseaseService.deleteImage(imageId).toPromise();
-          
-          if (response && response.success) {
-            successCount++;
-          } else {
-            console.error(`Failed to delete image ${imageId}:`, response);
-            errorCount++;
-          }
-        } catch (error) {
-          console.error(`Error deleting image ${imageId}:`, error);
-          errorCount++;
-        }
-      }
-
-      // Clear selection and reload data
-      this.selectedImages.clear();
-      
-      // Wait a moment for the backend to process the changes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force a complete reload of the data
-      await this.loadAllImages();
-      
-      if (errorCount === 0) {
-        alert(`Successfully deleted ${successCount} images`);
-      } else {
-        alert(`Deleted ${successCount} images. Failed to delete ${errorCount} images.`);
-      }
-    } catch (error) {
-      console.error('Error deleting images:', error);
-      alert('Failed to delete images. Please try again.');
-    } finally {
-      this.updatingSelected = false;
-    }
-  }
-
-  getFilteredFolders(): VerifiedDiseaseFolder[] {
-    let filtered = this.diseaseFolders;
-
-    // Filter by type
-    if (this.filterType !== 'all') {
-      filtered = filtered.filter(folder => folder.diseaseType === this.filterType);
-    }
-
-    // Filter by search term
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(folder => 
-        folder.disease.toLowerCase().includes(term)
-      );
-    }
-
-    return filtered;
-  }
-
-  getFilteredMainFolders(): MainFolder[] {
-    if (!this.mainFolders || this.mainFolders.length === 0) {
-      return [];
-    }
-    
-    // Update the subFolders based on original data and current filters
-    this.mainFolders.forEach(mainFolder => {
-      // Start with original unfiltered data
-      const filteredSubFolders = this.filterSubFolders(mainFolder.originalSubFolders);
-      const totalImages = filteredSubFolders.reduce((sum, folder) => sum + folder.count, 0);
-      
-      // Update the display data while preserving expanded state
-      mainFolder.count = totalImages;
-      mainFolder.subFolders = filteredSubFolders;
-    });
-    
-    return this.mainFolders;
-  }
-
-  filterSubFolders(subFolders: VerifiedDiseaseFolder[]): VerifiedDiseaseFolder[] {
-    let filtered = subFolders;
-
-    // Filter by type (leaf/fruit)
-    if (this.filterType !== 'all') {
-      filtered = filtered.filter(folder => folder.diseaseType === this.filterType);
-    }
-
-    // Filter by search term
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(folder => 
-        folder.disease.toLowerCase().includes(term)
-      );
-    }
-
-    // Apply date filtering if needed
-    if (this.dateRange !== 'all') {
-      // This would require adding timestamp to images, for now we'll skip
-      // filtered = this.applyDateFilter(filtered);
-    }
-
-    // Apply sorting
-    return this.applySorting(filtered);
-  }
-
-  applySorting(folders: VerifiedDiseaseFolder[]): VerifiedDiseaseFolder[] {
-    const sorted = [...folders];
-
-    switch (this.sortBy) {
-      case 'disease':
-        return sorted.sort((a, b) => a.disease.localeCompare(b.disease));
-      case 'count':
-        return sorted.sort((a, b) => b.count - a.count);
-      case 'date':
-        // For now, sort by disease name as we don't have timestamps
-        return sorted.sort((a, b) => a.disease.localeCompare(b.disease));
-      default:
-        return sorted;
-    }
-  }
-
-  hasActiveFilters(): boolean {
-    return this.filterType !== 'all' || 
-           this.searchTerm.trim() !== '' || 
-           this.dateRange !== 'all';
-  }
-
-  clearAllFilters(): void {
-    this.filterType = 'all';
-    this.searchTerm = '';
-    this.dateRange = 'all';
-    this.sortBy = 'disease';
-    
-    // Force update of filtered data
-    this.getFilteredMainFolders();
-    this.cdr.detectChanges();
-  }
-
-  getFilteredTotals() {
-    const filteredFolders = this.getFilteredMainFolders();
-    
-    const allImagesFolder = filteredFolders.find(f => f.type === 'all');
-    const verifiedFolder = filteredFolders.find(f => f.type === 'verified');
-    const unverifiedFolder = filteredFolders.find(f => f.type === 'unverified');
-    const unknownFolder = filteredFolders.find(f => f.type === 'unknown');
-
-    return {
-      total: allImagesFolder?.count || 0,
-      verified: verifiedFolder?.count || 0,
-      unverified: unverifiedFolder?.count || 0,
-      unknown: unknownFolder?.count || 0,
-      isFiltered: this.hasActiveFilters()
-    };
-  }
-
   // Download functionality
   async downloadFolderImages(folder: VerifiedDiseaseFolder) {
     try {
@@ -841,13 +569,7 @@ export class VerifiedImagesComponent implements OnInit {
     }
   }
 
-  toggleImageSelection(imageId: number) {
-    if (this.selectedImages.has(imageId)) {
-      this.selectedImages.delete(imageId);
-    } else {
-      this.selectedImages.add(imageId);
-    }
-  }
+  
 
   deselectAllInFolder(folder: VerifiedDiseaseFolder) {
     folder.images.forEach(image => {
@@ -855,41 +577,8 @@ export class VerifiedImagesComponent implements OnInit {
     });
   }
 
-  selectAllImages() {
-    // Select all images from currently visible (expanded) main folders
-    this.getFilteredMainFolders().forEach(mainFolder => {
-      if (mainFolder.expanded) {
-        mainFolder.subFolders.forEach(subFolder => {
-          subFolder.images.forEach(image => {
-            this.selectedImages.add(image.id);
-          });
-        });
-      }
-    });
-    
-    // If no main folders are expanded, select from all visible subfolders
-    const expandedFolders = this.getFilteredMainFolders().filter(folder => folder.expanded);
-    if (expandedFolders.length === 0) {
-      this.getFilteredMainFolders().forEach(mainFolder => {
-        mainFolder.subFolders.forEach(subFolder => {
-          subFolder.images.forEach(image => {
-            this.selectedImages.add(image.id);
-          });
-        });
-      });
-    }
-  }
-
-  deselectAllImages() {
-    this.selectedImages.clear();
-  }
-
-  viewImageDetails(imageId: number) {
-    this.router.navigate(['/admin/image-detail', imageId]);
-  }
-
   getImageUrl(image: MangoImage): string {
-    const baseUrl = 'http://127.0.0.1:8000'; // Use environment config
+    const baseUrl = environment.apiUrl; // Use environment config
     const originalUrl = image.image_url || image.image;
     
     if (!originalUrl) {
@@ -916,7 +605,7 @@ export class VerifiedImagesComponent implements OnInit {
     return `${baseUrl}/api/media/${filePath}`;
   }
 
-
+  
   getDiseaseTypeClass(diseaseType: 'leaf' | 'fruit' | 'unknown' | undefined): string {
     if (!diseaseType || diseaseType === 'unknown') return 'text-orange-600'; // Default color for mango/unknown
     return diseaseType === 'leaf' ? 'text-green-600' : 'text-orange-600';
@@ -945,13 +634,6 @@ export class VerifiedImagesComponent implements OnInit {
 
   getDownloadProgress(folder: VerifiedDiseaseFolder): string {
     return folder.downloading ? 'Preparing download...' : '';
-  }
-
-  onFilterChange() {
-    // Force update of filtered data
-    this.getFilteredMainFolders();
-    // Trigger change detection to update filtered results
-    this.cdr.detectChanges();
   }
 
   onSortChange() {
@@ -987,9 +669,201 @@ export class VerifiedImagesComponent implements OnInit {
     return 0;
   }
 
+  
+
+
+  //FILTER LOGICS
+  onFilterChange() {
+    // Force update of filtered data
+    this.getFilteredMainFolders();
+    // Trigger change detection to update filtered results
+    this.cdr.detectChanges();
+  }
+  getFilteredMainFolders(): MainFolder[] {
+    return this.filterService.filterMainFolders(
+      this.mainFolders,
+      this.filterType,
+      this.searchTerm,
+      this.sortBy,
+      this.dateRange
+    );
+  }
+  filterSubFolders(subFolders: VerifiedDiseaseFolder[]): VerifiedDiseaseFolder[] {
+    return this.filterService.filterSubFolders(
+      subFolders,
+      this.filterType,
+      this.searchTerm,
+      this.dateRange
+    )
+  }
+  
+  applySorting(folders: VerifiedDiseaseFolder[]): VerifiedDiseaseFolder[] {
+    return this.filterService.applySorting(folders, this.sortBy);
+  }
+
+  hasActiveFilters(): boolean {
+    return this.filterService.hasActiveFilters(
+      this.filterType,
+      this.searchTerm,
+      this.dateRange
+    );
+  }
+
+  clearAllFilters(): void {
+    this.filterType = 'all';
+    this.searchTerm = '';
+    this.dateRange = 'all';
+    this.sortBy = 'disease';
+    
+    // Force update of filtered data
+    this.getFilteredMainFolders();
+    this.cdr.detectChanges();
+  }
+
+  getFilteredTotals() {
+    const filteredFolders = this.getFilteredMainFolders();
+    const totals = this.filterService.getFilteredTotal(filteredFolders);
+
+    return {
+      ...totals,
+      isFiltered: this.hasActiveFilters()
+    };
+  }
+
+
+
+
+
+  // BUTTON ACTIONS
+
+  toggleImageSelection(imageId: number): void{
+    this.selectedImages = this.buttonsService.toggleImageSelection(imageId, this.selectedImages);
+  }
+
+  selectAllInFolder(folder: VerifiedDiseaseFolder): void{
+    this.selectedImages = this.buttonsService.selectAllInFolder(folder, this.selectedImages);
+  }
   // Helper method to check if all images in a folder are selected
   isAllInFolderSelected(folder: VerifiedDiseaseFolder): boolean {
-    if (folder.images.length === 0) return false;
-    return folder.images.every(image => this.selectedImages.has(image.id));
+    return this.buttonsService.isAllInFolderSelected(folder, this.selectedImages);
+  }
+  selectAllImages(): void{
+    this.selectedImages = this.buttonsService.selectAllImages(this.mainFolders);
+  }
+  deselectAllImages() {
+    this.selectedImages = this.buttonsService.deselectAllImages();
+  }
+
+
+  //verify button
+  async verifySelectedImages(): Promise<void> {
+    if (this.selectedImages.size === 0) {
+      alert('Please select images to verify');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to verify ${this.selectedImages.size} images?`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    this.updatingSelected = true;
+
+    try {
+      const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
+      const result = await this.buttonsService.verifySelectedImages(selectedIds);
+
+      alert(result.message);
+
+      if (result.success) {
+        this.selectedImages = this.buttonsService.deselectAllImages();
+        await this.loadAllImages();
+      }
+
+    } finally {
+      this.updatingSelected = false;
+    }
+  }
+
+
+
+  //unverify button
+  async unverifySelectedImages(): Promise<void> {
+    if (this.selectedImages.size === 0) {
+      alert('Please select images to unverify');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to unverify ${this.selectedImages.size} images?`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    this.updatingSelected = true;
+
+    try {
+      const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
+      const result = await this.buttonsService.unverifySelectedImages(selectedIds);
+
+      alert(result.message);
+
+      if (result.success) {
+        this.selectedImages = this.buttonsService.deselectAllImages();
+        await this.loadAllImages();
+      }
+
+    } finally {
+      this.updatingSelected = false;
+    }
+  }
+
+  //delete button
+  async deleteSelectedImages(): Promise<void> {
+    if (this.selectedImages.size === 0) {
+      alert('Please select images to delete');
+      return;
+    }
+
+    const confirmMessage = `⚠️ WARNING: Are you sure you want to DELETE ${this.selectedImages.size} images?\n\nThis action CANNOT be undone!`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const doubleConfirm = confirm('Are you ABSOLUTELY sure? This will permanently delete the images.');
+    if (!doubleConfirm) {
+      return;
+    }
+
+    this.updatingSelected = true;
+
+    try {
+      const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
+      const result = await this.buttonsService.deleteSelectedImages(selectedIds);
+
+      alert(result.message);
+
+      if (result.success) {
+        this.selectedImages = this.buttonsService.deselectAllImages();
+        await this.loadAllImages();
+      }
+
+    } finally {
+      this.updatingSelected = false;
+    }
+  }
+
+
+
+  viewImageDetails(imageId: number) {
+    this.router.navigate(['/admin/image-detail', imageId]);
+  }
+  isImageSelected(imageId: number): boolean {
+    return this.buttonsService.isImageSelected(imageId, this.selectedImages);
+  }
+  getSelectedCount(): number {
+    return this.buttonsService.getSelectedCount(this.selectedImages);
+  }
+  hasSelectedImages(): boolean {
+    return this.buttonsService.hasSelectedImages(this.selectedImages);
   }
 }
