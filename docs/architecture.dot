@@ -1,0 +1,114 @@
+digraph MangoSenseArchitecture {
+    // Graph settings
+    rankdir=TB;
+    bgcolor="white";
+    fontname="Arial";
+    fontsize=14;
+    node [fontname="Arial", fontsize=12, style=filled];
+    edge [fontname="Arial", fontsize=10];
+    
+    // Title
+    label="MangoSense System Architecture";
+    labelloc=t;
+    fontsize=18;
+    
+    // Define nodes with their roles
+    
+    // Backend API Server
+    backend [
+        label=<
+            <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                <TR><TD BGCOLOR="#4CAF50" COLSPAN="2"><FONT COLOR="white"><B>manggo-backend</B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT">Repository:</TD><TD ALIGN="LEFT">botong101/manggo-backend</TD></TR>
+                <TR><TD ALIGN="LEFT">Type:</TD><TD ALIGN="LEFT">Backend API Server</TD></TR>
+                <TR><TD ALIGN="LEFT">Language:</TD><TD ALIGN="LEFT">Python (98.7%)</TD></TR>
+                <TR><TD ALIGN="LEFT">Role:</TD><TD ALIGN="LEFT">Central API Layer</TD></TR>
+                <TR><TD ALIGN="LEFT" COLSPAN="2">
+                    • RESTful API endpoints<BR ALIGN="LEFT"/>
+                    • Disease detection ML models<BR ALIGN="LEFT"/>
+                    • Image processing<BR ALIGN="LEFT"/>
+                    • Data persistence<BR ALIGN="LEFT"/>
+                    • Authentication &amp; authorization<BR ALIGN="LEFT"/>
+                </TD></TR>
+            </TABLE>
+        >,
+        shape=plaintext
+    ];
+    
+    // Admin Web Application
+    admin [
+        label=<
+            <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                <TR><TD BGCOLOR="#2196F3" COLSPAN="2"><FONT COLOR="white"><B>manggo-admin</B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT">Repository:</TD><TD ALIGN="LEFT">botong101/manggo-admin</TD></TR>
+                <TR><TD ALIGN="LEFT">Type:</TD><TD ALIGN="LEFT">Web Admin Interface</TD></TR>
+                <TR><TD ALIGN="LEFT">Languages:</TD><TD ALIGN="LEFT">HTML (48.5%), TypeScript (45%)</TD></TR>
+                <TR><TD ALIGN="LEFT">Framework:</TD><TD ALIGN="LEFT">Angular 20</TD></TR>
+                <TR><TD ALIGN="LEFT">Role:</TD><TD ALIGN="LEFT">Administrative Dashboard</TD></TR>
+                <TR><TD ALIGN="LEFT" COLSPAN="2">
+                    • Disease statistics dashboard<BR ALIGN="LEFT"/>
+                    • Image management<BR ALIGN="LEFT"/>
+                    • User management<BR ALIGN="LEFT"/>
+                    • Reports &amp; analytics<BR ALIGN="LEFT"/>
+                    • System configuration<BR ALIGN="LEFT"/>
+                </TD></TR>
+            </TABLE>
+        >,
+        shape=plaintext
+    ];
+    
+    // Mobile Application
+    mobile [
+        label=<
+            <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                <TR><TD BGCOLOR="#FF9800" COLSPAN="2"><FONT COLOR="white"><B>manggo-mobile</B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT">Repository:</TD><TD ALIGN="LEFT">botong101/manggo-mobile</TD></TR>
+                <TR><TD ALIGN="LEFT">Type:</TD><TD ALIGN="LEFT">Mobile Application</TD></TR>
+                <TR><TD ALIGN="LEFT">Languages:</TD><TD ALIGN="LEFT">TypeScript (50.4%), SCSS (30.2%)</TD></TR>
+                <TR><TD ALIGN="LEFT">Role:</TD><TD ALIGN="LEFT">User-Facing Mobile App</TD></TR>
+                <TR><TD ALIGN="LEFT" COLSPAN="2">
+                    • Image capture interface<BR ALIGN="LEFT"/>
+                    • Disease detection results<BR ALIGN="LEFT"/>
+                    • User authentication<BR ALIGN="LEFT"/>
+                    • History tracking<BR ALIGN="LEFT"/>
+                    • Offline capabilities<BR ALIGN="LEFT"/>
+                </TD></TR>
+            </TABLE>
+        >,
+        shape=plaintext
+    ];
+    
+    // Define edges (connections) with labels
+    admin -> backend [
+        label="HTTP/HTTPS Requests\n(REST API Calls)",
+        dir=both,
+        color="#2196F3",
+        penwidth=2,
+        arrowsize=0.8
+    ];
+    
+    mobile -> backend [
+        label="HTTP/HTTPS Requests\n(REST API Calls)",
+        dir=both,
+        color="#FF9800",
+        penwidth=2,
+        arrowsize=0.8
+    ];
+    
+    // Legend
+    {
+        rank=same;
+        legend [
+            label=<
+                <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+                    <TR><TD BGCOLOR="lightgray" COLSPAN="2"><B>Legend</B></TD></TR>
+                    <TR><TD ALIGN="LEFT">API Flow:</TD><TD ALIGN="LEFT">Bidirectional REST API communication</TD></TR>
+                    <TR><TD ALIGN="LEFT">Backend:</TD><TD ALIGN="LEFT">Python-based server (FastAPI/Flask/Django)</TD></TR>
+                    <TR><TD ALIGN="LEFT">Admin:</TD><TD ALIGN="LEFT">Angular-based web application</TD></TR>
+                    <TR><TD ALIGN="LEFT">Mobile:</TD><TD ALIGN="LEFT">TypeScript-based mobile app (likely Ionic/React Native)</TD></TR>
+                </TABLE>
+            >,
+            shape=plaintext
+        ];
+    }
+}
