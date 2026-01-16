@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build -- --configuration production",
+  "outputDirectory": "dist/mango-sense-master-ui",
+  "framework": "angular",
+  "installCommand": "npm install",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
