@@ -15,6 +15,6 @@ export interface MainFolder {
   count: number;
   expanded: boolean;
   subFolders: VerifiedDiseaseFolder[];
-  originalSubFolders: VerifiedDiseaseFolder[]; // Store original unfiltered data
+  originalSubFolders: VerifiedDiseaseFolder[]; //this original unfiltered image data
   type: 'all' | 'verified' | 'unverified' | 'unknown';
 }

@@ -1,6 +1,5 @@
-<!-- Verified Images Page -->
 <div class="min-h-screen bg-gray-50 p-6">
-  <!-- Header -->
+  <!--header-->
   <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <div class="flex justify-between items-center mb-4">
       <div>
@@ -36,9 +35,9 @@
       </div>
     </div>
 
-    <!-- Filters and Controls -->
+    <!--Filters-->
     <div class="flex flex-wrap gap-4 items-center justify-between">
-      <!-- Search and Filters -->
+      <!--string search-->
       <div class="flex items-center space-x-4">
         <div class="relative">
           <input
@@ -78,7 +77,7 @@
           <option value="date">Sort by Latest</option>
         </select>
 
-        <!-- Clear Filters Button -->
+        <!--clear filter-->
         <button
           *ngIf="hasActiveFilters()"
           (click)="clearAllFilters()"
@@ -88,7 +87,7 @@
         </button>
       </div>
 
-      <!-- Selection Actions -->
+      <!--selection-->
       <div class="flex items-center space-x-2">
         <button
           (click)="selectAllImages()"
@@ -103,7 +102,7 @@
       </div>
     </div>
 
-    <!-- Selection Actions Bar -->
+    <!--selection bar-->
     <div *ngIf="selectedImages.size > 0" 
          class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
       <span class="text-blue-800 font-medium">{{ selectedImages.size }} images selected</span>
@@ -139,13 +138,13 @@
     </div>
   </div>
 
-  <!-- Loading State -->
+  <!--loading-->
   <div *ngIf="loading" class="text-center py-12">
     <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     <p class="mt-4 text-gray-600">Loading verified images...</p>
   </div>
 
-  <!-- Error State -->
+  <!--error handler-->
   <div *ngIf="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
     <div class="flex items-center">
       <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
@@ -153,14 +152,14 @@
     </div>
   </div>
 
-  <!-- Main Folders -->
+  <!--main folders-->
   <div *ngIf="!loading && !error" class="space-y-4">
-    <!-- Main Category Folders -->
+    <!--category-->
     <div 
       *ngFor="let mainFolder of getFilteredMainFolders()" 
       class="bg-white rounded-lg shadow-md overflow-hidden">
       
-      <!-- Main Folder Header -->
+      <!--category header-->
       <div 
         class="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b"
         [class.bg-blue-50]="mainFolder.expanded"
@@ -200,13 +199,13 @@
         </div>
       </div>
 
-      <!-- Disease Sub-folders -->
+      <!--Sub-folders -->
       <div *ngIf="mainFolder.expanded" class="bg-gray-50">
         <div 
           *ngFor="let folder of mainFolder.subFolders" 
           class="bg-white rounded-lg shadow-sm overflow-hidden m-4 border">
           
-          <!-- Sub-folder Header -->
+          <!--sub folder names-->
           <div 
             class="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b"
             (click)="toggleFolder(folder)">
@@ -245,9 +244,9 @@
             </div>
           </div>
 
-          <!-- Folder Content -->
+          <!--folder datas -->
           <div *ngIf="folder.expanded" class="p-4 bg-gray-50">
-            <!-- Table View -->
+            <!--table -->
             <div class="overflow-x-auto bg-white rounded-lg shadow">
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -282,7 +281,7 @@
                     class="hover:bg-gray-50 transition-colors"
                     [class.bg-blue-50]="selectedImages.has(image.id)">
                     
-                    <!-- Selection Checkbox -->
+                    <!--checkbox-->
                     <td class="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
@@ -291,16 +290,16 @@
                         class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                     </td>
                     
-                    <!-- Image ID -->
+                    <!-- ID -->
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{{ image.id }}
                     </td>
-                    <!-- Detection Date -->
+                    <!-- date -->
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {{ formatDate(image.uploaded_at) }}
                     </td>
                     
-                    <!-- Confidence -->
+                    <!-- confidence -->
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span 
                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -314,7 +313,7 @@
                       </span>
                     </td>
                     
-                    <!-- Status -->
+                    <!-- status -->
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span 
                         *ngIf="image.is_verified"
@@ -330,7 +329,7 @@
                       </span>
                     </td>
                     
-                    <!-- Actions -->
+                    <!-- actions -->
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div class="flex items-center space-x-2">
                         <button
@@ -346,14 +345,14 @@
                 </tbody>
               </table>
               
-              <!-- Empty folder state -->
+              <!-- if empty ang folder -->
               <div *ngIf="folder.images.length === 0" class="text-center py-8">
                 <i class="fas fa-image text-gray-400 text-4xl mb-2"></i>
                 <p class="text-gray-500">No images in this folder</p>
               </div>
             </div>
 
-            <!-- Download Progress -->
+            <!--download progress-->
             <div *ngIf="folder.downloading" class="mt-4">
               <div class="bg-blue-100 rounded-full h-2">
                 <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 100%"></div>
@@ -364,7 +363,7 @@
     </div>
   </div>
 
-  <!-- Empty State -->
+  <!-- if empty -->
   <div *ngIf="!loading && !error && mainFolders.length === 0" 
        class="text-center py-12 bg-white rounded-lg shadow-md">
     <i class="fas fa-folder-open text-gray-400 text-6xl mb-4"></i>

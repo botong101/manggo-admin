@@ -3,15 +3,12 @@ import { Router } from '@angular/router';
 import { MangoDiseaseService, UserConfirmation, ConfirmationStats } from '../../services/mango-disease.service';
 import { DownloadService } from '../../services/download.service';
 import { saveAs } from 'file-saver';
+import { environment } from '../../../environments/environment';
 
 interface DiseaseConfirmationGroup {
   disease: string;
-  correctCount: number;
-  incorrectCount: number;
   totalCount: number;
-  accuracy: number;
-  correctConfirmations: UserConfirmation[];
-  incorrectConfirmations: UserConfirmation[];
+  confirmations: UserConfirmation[];
   expanded: boolean;
   downloading: boolean;
 }
@@ -28,14 +25,13 @@ export class UserConfirmationsComponent implements OnInit {
   loading = true;
   error: string | null = null;
   
-  // Make Math available in template
+  //math for template
   Math = Math;
   
-  // Filter options
+  //filters
   selectedDisease: string = 'all';
-  selectedCorrectness: string = 'all'; // 'all', 'correct', 'incorrect'
   searchTerm = '';
-  sortBy: 'disease' | 'accuracy' | 'total' | 'date' = 'disease';
+  sortBy: 'disease' | 'total' | 'date' = 'disease';
   dateRange: 'all' | 'week' | 'month' | 'year' = 'all';
   showLocationOnly = false;
   
@@ -44,7 +40,7 @@ export class UserConfirmationsComponent implements OnInit {
   pageSize = 50;
   totalCount = 0;
   
-  // UI state
+  //ui stuff
   exportingAll = false;
   viewMode: 'grouped' | 'list' = 'grouped';
   allConfirmations: UserConfirmation[] = [];
@@ -64,7 +60,7 @@ export class UserConfirmationsComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-      // Load statistics and confirmations in parallel
+      //load stats and confirmations together
       const [statsResponse, confirmationsResponse] = await Promise.all([
         this.mangoDiseaseService.getConfirmationStatistics().toPromise(),
         this.loadConfirmations()
@@ -88,16 +84,12 @@ export class UserConfirmationsComponent implements OnInit {
         page_size: this.pageSize
       };
 
-      // Apply filters
+      //apply filters
       if (this.selectedDisease !== 'all') {
         params.disease = this.selectedDisease;
       }
-      
-      if (this.selectedCorrectness !== 'all') {
-        params.is_correct = this.selectedCorrectness === 'correct';
-      }
 
-      // Date range filter
+      //date filter
       if (this.dateRange !== 'all') {
         const endDate = new Date();
         const startDate = new Date();
@@ -137,7 +129,7 @@ export class UserConfirmationsComponent implements OnInit {
   groupConfirmationsByDisease() {
     const groupedData: { [disease: string]: UserConfirmation[] } = {};
     
-    // Group confirmations by disease
+    //group by disease
     this.allConfirmations.forEach(confirmation => {
       const disease = confirmation.predicted_disease;
       if (!groupedData[disease]) {
@@ -146,26 +138,20 @@ export class UserConfirmationsComponent implements OnInit {
       groupedData[disease].push(confirmation);
     });
 
-    // Create disease groups with statistics
+    //create disease groups
     this.diseaseGroups = Object.keys(groupedData).map(disease => {
       const confirmations = groupedData[disease];
-      const correctConfirmations = confirmations.filter(c => c.is_correct);
-      const incorrectConfirmations = confirmations.filter(c => !c.is_correct);
       
       return {
         disease,
-        correctCount: correctConfirmations.length,
-        incorrectCount: incorrectConfirmations.length,
         totalCount: confirmations.length,
-        accuracy: confirmations.length > 0 ? (correctConfirmations.length / confirmations.length) * 100 : 0,
-        correctConfirmations,
-        incorrectConfirmations,
+        confirmations,
         expanded: false,
         downloading: false
       };
     });
 
-    // Sort groups
+    //sort
     this.sortGroups();
   }
 
@@ -174,8 +160,6 @@ export class UserConfirmationsComponent implements OnInit {
       switch (this.sortBy) {
         case 'disease':
           return a.disease.localeCompare(b.disease);
-        case 'accuracy':
-          return b.accuracy - a.accuracy;
         case 'total':
           return b.totalCount - a.totalCount;
         default:
@@ -203,11 +187,6 @@ export class UserConfirmationsComponent implements OnInit {
       
       if (disease) {
         params.disease = disease;
-      }
-      
-      // Apply current filters to export
-      if (this.selectedCorrectness !== 'all') {
-        params.is_correct = this.selectedCorrectness === 'correct';
       }
 
       if (this.dateRange !== 'all') {
@@ -335,7 +314,7 @@ export class UserConfirmationsComponent implements OnInit {
 
   // Image download methods
   getImageUrl(confirmation: UserConfirmation): string {
-    const baseUrl = 'http://127.0.0.1:8000';
+    const baseUrl = environment.apiUrl;
     
     if (!confirmation.image_data) {
       return '';
@@ -351,7 +330,7 @@ export class UserConfirmationsComponent implements OnInit {
       return originalUrl;
     }
     
-    // Use custom media endpoint
+    //custom media endpoint
     let filePath = '';
     if (originalUrl.startsWith('/media/')) {
       filePath = originalUrl.substring(7);

@@ -26,53 +26,53 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Subscribe to authentication status
+    //check if logged in
     this.authService.isAuthenticated$.subscribe(
       isAuth => {
         this.isAuthenticated = isAuth;
         this.updateNavigationVisibility();
         
-        // Load notifications when user becomes authenticated
+        //load notifs when logged in
         if (isAuth) {
           this.notificationService.loadNotifications();
         }
       }
     );
 
-    // Subscribe to current user
+    //get current user
     this.authService.currentUser$.subscribe(
       user => {
         this.currentUser = user;
       }
     );
 
-    // Subscribe to notification count
+    //get notif count
     this.notificationService.unreadCount$.subscribe(
       count => {
         this.unreadNotificationCount = count;
       }
     );
 
-    // Listen to route changes to update navigation visibility
+    //watch route changes
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
       this.updateNavigationVisibility();
     });
 
-    // Force check authentication on init
+    //check auth on load
     this.isAuthenticated = this.authService.isLoggedIn();
     this.currentUser = this.authService.getCurrentUser();
     this.updateNavigationVisibility();
     
-    // Load notifications if already authenticated
+    //load notifs if already logged in
     if (this.isAuthenticated) {
       this.notificationService.loadNotifications();
     }
   }
 
   updateNavigationVisibility() {
-    // Show navigation when authenticated and not on login page
+    //show nav when logged in and not on login page
     this.showNavigation = this.isAuthenticated && !this.router.url.includes('/login');
   }
 
@@ -82,7 +82,7 @@ export class AppComponent implements OnInit {
 
   navigateTo(route: string) {
     this.router.navigate([route]);
-    this.isMenuOpen = false; // Close menu after navigation
+    this.isMenuOpen = false; //close menu
   }
 
   navigateToUploadImages() {
@@ -120,7 +120,7 @@ export class AppComponent implements OnInit {
   }
 
   refreshData() {
-    // Refresh the current page/component data
+    //reload page
     window.location.reload();
   }
 
@@ -138,7 +138,7 @@ export class AppComponent implements OnInit {
       return 'Admin User';
     }
     
-    // Try to get full name from user data, fallback to username
+    //get full name or fallback to username
     const firstName = this.currentUser.first_name || '';
     const lastName = this.currentUser.last_name || '';
     const fullName = `${firstName} ${lastName}`.trim();

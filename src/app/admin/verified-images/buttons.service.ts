@@ -13,13 +13,12 @@ export class ButtonsService{
         private mangoDiseaseService: MangoDiseaseService,
         private router: Router
     ) {}
-    ///if image is already selected(checkboxed), remove it in selected array
-    /// if image is not selected(unchecked-box), add it to selected array
+    //toggle image checkbox
     toggleImageSelection(
         imageId: number,
         currentSelection: Set<number>
     ): Set<number> {
-        //creates new set from current selection for output
+        //make new set from current
         const newSelection = new Set<number>();
 
         const existingIds = Array.from(currentSelection);
@@ -57,7 +56,7 @@ export class ButtonsService{
             newSelection.add(existingIds[i]);
         }
         
-        //add all image from inside the initiated select all folder
+        //add all images from folder
         for (let i=0; i< folder.images.length; i++){
             const image = folder.images[i];
             newSelection.add(image.id);
@@ -116,7 +115,7 @@ export class ButtonsService{
         selectedIds: number[]
     ): Promise<{success: boolean; message: string}> {
 
-        //first validation
+        //check if any selected
         if (selectedIds.length === 0){
             return {
                 success: false,
@@ -133,7 +132,7 @@ export class ButtonsService{
                 message: `Successfully verified ${selectedIds.length} images`
             };
         } catch (error) {
-            // Step 4: Handle error
+            //error handling
             console.error('Error verifying images:', error);
             return {
                 success: false,
@@ -144,7 +143,7 @@ export class ButtonsService{
     async unverifySelectedImages(
         selectedIds: number[]
     ): Promise<{ success: boolean; message: string }> {
-    // Step 1: Validate input
+    //check input
         if (selectedIds.length === 0) {
         return {
             success: false,
@@ -153,19 +152,19 @@ export class ButtonsService{
         }
         
         try {
-        // Step 2: Call backend API to unverify images
+        //call api to unverify
         await firstValueFrom(
             this.mangoDiseaseService.bulkUpdateImages(selectedIds, {is_verified: false})
         );
         
-        // Step 3: Return success
+        //done
         return {
             success: true,
             message: `Successfully unverified ${selectedIds.length} images`
         };
         
         } catch (error) {
-        // Step 4: Handle error
+        //error
         console.error('Error unverifying images:', error);
         return {
             success: false,
@@ -229,7 +228,7 @@ export class ButtonsService{
     }
 
     isImageSelected(imageId: number, currentSelection: Set<number>): boolean {
-    // Check if image ID exists in selection Set
+    //check if image is selected
         const selectedIds = Array.from(currentSelection);
         for (let i = 0; i < selectedIds.length; i++) {
             if (selectedIds[i] === imageId) {
@@ -255,26 +254,24 @@ export class ButtonsService{
         return currentSelection.size > 0;
     }
 
-    /**
-     * Get all images from main folders (helper for other operations)
-     */
+    //get all images from folders
     getAllImagesFromFolders(mainFolders: MainFolder[]): MangoImage[] {
-        // Step 1: Create empty array to store all images
+        //empty array for images
         const allImages: MangoImage[] = [];
         
-        // Step 2: Loop through each main folder
+        //loop main folders
         for (let i = 0; i < mainFolders.length; i++) {
         const mainFolder = mainFolders[i];
         
-        // Step 3: Loop through each sub folder
+        //loop sub folders
         for (let j = 0; j < mainFolder.subFolders.length; j++) {
             const subFolder = mainFolder.subFolders[j];
             
-            // Step 4: Loop through each image
+            //loop images
             for (let k = 0; k < subFolder.images.length; k++) {
                 const image = subFolder.images[k];
                 
-                // Step 5: Check if image already exists in array
+                //check for duplicates
                 let alreadyExists = false;
                 for (let m = 0; m < allImages.length; m++) {
                     if (allImages[m].id === image.id) {
@@ -283,7 +280,7 @@ export class ButtonsService{
                     }
                 }
                 
-                // Step 6: Add image if not duplicate
+                //add if not duplicate
                 if (!alreadyExists) {
                     allImages.push(image);
                 }

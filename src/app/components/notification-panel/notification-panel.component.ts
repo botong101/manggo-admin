@@ -36,7 +36,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
       );
     });
     
-    // Initialize visibility tracking
+    //track visibility
     this.previousVisibility = this.isVisible;
     if (this.isVisible) {
       this.startLiveNotifications();
@@ -44,18 +44,18 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
   }
 
   ngOnDestroy(): void {
-    // Stop live notifications when component is destroyed
+    //stop polling when destroyed
     this.stopLiveNotifications();
   }
 
   ngOnChanges(): void {
-    // Handle visibility changes
+    //when visibility changes
     if (this.isVisible !== this.previousVisibility) {
       if (this.isVisible && this.isLiveMode) {
-        // Panel became visible - start polling
+        //panel visible - start polling
         this.startLiveNotifications();
       } else if (!this.isVisible) {
-        // Panel became hidden - stop polling to save resources
+        //panel hidden - stop polling
         this.stopLiveNotifications();
       }
       this.previousVisibility = this.isVisible;
@@ -67,12 +67,12 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
   }
 
   refreshNotifications(): void {
-    this.notificationService.refreshNotifications();  // Load all notifications (read and unread)
+    this.notificationService.refreshNotifications();  //get all notifs
     
-    // If live mode is off, this is manual refresh, so restart polling briefly
+    //manual refresh - start polling briefly
     if (!this.isLiveMode && this.isVisible) {
       this.notificationService.startPolling();
-      // Stop after a short delay to allow for immediate updates
+      //stop after short delay
       setTimeout(() => {
         if (!this.isLiveMode) {
           this.notificationService.stopPolling();
@@ -87,12 +87,12 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
       return;
     }
 
-    // Mark as read immediately when clicked (regardless of expansion)
+    //mark read when clicked
     if (!notification.isRead) {
       this.notificationService.markAsRead(notification.id);
     }
 
-    // Toggle expansion - if clicking on same notification, collapse it
+    //toggle expand
     if (this.expandedNotificationId === notification.id) {
       this.expandedNotificationId = null;
     } else {
@@ -109,7 +109,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
   onDetailsClick(): void {
     if (this.selectedNotification) {
       this.close.emit();
-      // Navigate to image details page - fix the route
+      //go to image details
       this.router.navigate(['/admin/image-detail', this.selectedNotification.imageId]);
     }
   }
@@ -199,30 +199,30 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
     const type = detectionType?.toLowerCase();
     
     if (type?.includes('fruit') || type === 'fruit') {
-      // Orange fruit icon
+      //fruit icon
       return `<svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2C10.343 2 9 3.343 9 5C9 6.657 10.343 8 12 8C13.657 8 15 6.657 15 5C15 3.343 13.657 2 12 2ZM12 10C8.134 10 5 13.134 5 17C5 20.866 8.134 24 12 24C15.866 24 19 20.866 19 17C19 13.134 15.866 10 12 10Z"/>
       </svg>`;
     } else if (type?.includes('leaf') || type === 'leaf') {
-      // Green leaf icon
+      //leaf icon
       return `<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M21,6V8L19,9V15A4,4 0 0,1 15,19H9A4,4 0 0,1 5,15V9L3,8V6H21Z"/>
       </svg>`;
     } else {
-      // Default image icon
+      //default icon
       return `<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
       </svg>`;
     }
   }
 
-  // Helper method to get detection type for proper icon display
+  //get detection type for icon
   getDetectionType(notification: NotificationData): string {
     return notification.detectionType || notification.diseaseType || 'unknown';
   }
 
   getDiseaseIcon(diseaseType: string): string {
-    // Return appropriate SVG icon classes based on disease type
+    //get icon based on disease
     switch (diseaseType.toLowerCase()) {
       case 'anthracnose':
         return 'virus';
@@ -286,8 +286,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
   formatConfidence(confidence: number): string {
     const conf = typeof confidence === 'string' ? parseFloat(confidence) : (confidence || 0);
     
-    // If confidence is already in percentage format (0-100), use as is
-    // If confidence is in decimal format (0-1), convert to percentage
+    //convert to percent if needed
     const percentage = conf > 1 ? conf : conf * 100;
     return percentage.toFixed(1) + '%';
   }
@@ -307,7 +306,7 @@ export class NotificationPanelComponent implements OnInit, OnDestroy, OnChanges 
     this.selectedNotification = null;
   }
 
-  // Live notification methods
+  //live notif stuff
   startLiveNotifications(): void {
     if (this.isLiveMode) {
       this.notificationService.startPolling();

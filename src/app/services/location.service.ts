@@ -22,25 +22,21 @@ export interface LocationPermissionStatus {
   providedIn: 'root'
 })
 export class LocationService {
-  private readonly LOCATION_TIMEOUT = 10000; // 10 seconds
+  private readonly LOCATION_TIMEOUT = 10000; //10 sec
   private readonly HIGH_ACCURACY_OPTIONS = {
     enableHighAccuracy: true,
     timeout: this.LOCATION_TIMEOUT,
-    maximumAge: 300000 // 5 minutes
+    maximumAge: 300000 //5 min cache
   };
 
   constructor() {}
 
-  /**
-   * Check if geolocation is supported by the browser
-   */
+  //check if browser supports gps
   isGeolocationSupported(): boolean {
     return 'geolocation' in navigator;
   }
 
-  /**
-   * Check current permission status for geolocation
-   */
+  //check gps permission status
   async checkPermissionStatus(): Promise<LocationPermissionStatus> {
     if (!this.isGeolocationSupported()) {
       return { granted: false, denied: true, prompt: false };
@@ -59,13 +55,11 @@ export class LocationService {
       console.warn('Permission API not supported:', error);
     }
 
-    // Fallback: assume prompt state if permissions API is not supported
+    //fallback if permissions api not supported
     return { granted: false, denied: false, prompt: true };
   }
 
-  /**
-   * Request user permission and get current location
-   */
+  //get users location
   getCurrentLocation(): Observable<LocationData> {
     return new Observable(observer => {
       if (!this.isGeolocationSupported()) {
@@ -118,9 +112,7 @@ export class LocationService {
     });
   }
 
-  /**
-   * Watch user location changes
-   */
+  //track location changes
   watchLocation(): Observable<LocationData> {
     return new Observable(observer => {
       if (!this.isGeolocationSupported()) {
@@ -137,7 +129,7 @@ export class LocationService {
             timestamp: position.timestamp
           };
 
-          // Try to get address information
+          //try to get address
           try {
             const addressInfo = await this.reverseGeocode(
               position.coords.latitude,
@@ -170,19 +162,17 @@ export class LocationService {
         this.HIGH_ACCURACY_OPTIONS
       );
 
-      // Return cleanup function
+      //cleanup
       return () => {
         navigator.geolocation.clearWatch(watchId);
       };
     });
   }
 
-  /**
-   * Reverse geocode coordinates to address
-   */
+  //convert coords to address
   private async reverseGeocode(latitude: number, longitude: number): Promise<Partial<LocationData>> {
     try {
-      // Using OpenStreetMap Nominatim API (free reverse geocoding)
+      //using free OpenStreetMap api
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
         {
@@ -214,9 +204,7 @@ export class LocationService {
     }
   }
 
-  /**
-   * Format location for display
-   */
+  //make location readable
   formatLocation(location: LocationData): string {
     const parts = [];
     
@@ -231,11 +219,9 @@ export class LocationService {
     return `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
   }
 
-  /**
-   * Get distance between two locations in kilometers
-   */
+  //calculate distance in km
   getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; // Radius of the Earth in kilometers
+    const R = 6371; //earth radius in km
     const dLat = this.degreesToRadians(lat2 - lat1);
     const dLon = this.degreesToRadians(lon2 - lon1);
     
@@ -250,23 +236,17 @@ export class LocationService {
     return distance;
   }
 
-  /**
-   * Convert degrees to radians
-   */
+  //convert degrees to radians
   private degreesToRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
   }
 
-  /**
-   * Check if location is accurate enough
-   */
+  //check if accuracy is good enough
   isLocationAccurate(location: LocationData, requiredAccuracy: number = 100): boolean {
     return location.accuracy <= requiredAccuracy;
   }
 
-  /**
-   * Get location accuracy description
-   */
+  //describe accuracy level
   getAccuracyDescription(accuracy: number): string {
     if (accuracy <= 5) return 'Very High';
     if (accuracy <= 20) return 'High';

@@ -66,7 +66,7 @@ export class UserManagementService {
 
   constructor(private http: HttpClient) { }
 
-  // Get all users with basic stats
+  //get users with their stats
   getUsers(params?: {
     page?: number;
     page_size?: number;
@@ -127,7 +127,7 @@ export class UserManagementService {
               pagination: response.data.pagination
             };
           }
-          // If API doesn't have users endpoint yet, generate from image data
+          //fallback to image data if api fails
           throw new Error('API response not in expected format');
         }),
         catchError(error => {
@@ -137,7 +137,7 @@ export class UserManagementService {
       );
   }
 
-  // Fallback method to extract users from image data
+  //backup method - get users from images if api fails
   private getUsersFromImages(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/classified-images/?page_size=1000`)
       .pipe(
@@ -200,9 +200,9 @@ export class UserManagementService {
       );
   }
 
-  // Get detailed user information with images
+  //get user info with their images
   getUserWithImages(userId: number): Observable<UserWithImages> {
-    // Use the new API endpoint to get user images
+    //use new api endpoint
     return this.http.get<any>(`${this.apiUrl}/users/${userId}/images/`)
       .pipe(
         map(response => {
@@ -270,7 +270,7 @@ export class UserManagementService {
       );
   }
 
-  // Calculate image statistics for a user
+  //count image stats for user
   private calculateImageStats(images: MangoImage[]) {
     const stats = {
       total: images.length,
@@ -296,7 +296,7 @@ export class UserManagementService {
         stats.diseased++;
       }
 
-      // Use the same disease type logic as other components
+      //same logic as other components
       const diseaseType = this.getDiseaseType(image);
       if (diseaseType === 'leaf') {
         stats.leaf++;
@@ -308,19 +308,19 @@ export class UserManagementService {
     return stats;
   }
 
-  // Helper method to determine disease type (same logic as other components)
+  //figure out if its leaf or fruit
   private getDiseaseType(image: MangoImage): 'leaf' | 'fruit' | 'unknown' {
-    // First priority: Use the model_used field from the backend API
+    //first try model_used field
     if (image.model_used) {
       return image.model_used;
     }
     
-    // Second priority: Use the disease_type field from the backend
+    //then try disease_type field
     if (image.disease_type && image.disease_type !== 'unknown') {
       return image.disease_type;
     }
     
-    // Fallback: classify based on disease name
+    //last resort - guess from disease name
     const disease = image.disease_classification || image.predicted_class;
     if (!disease) return 'unknown';
     
@@ -346,7 +346,7 @@ export class UserManagementService {
     return 'unknown';
   }
 
-  // Get user statistics
+  //get overall user stats
   getUserStats(): Observable<UserStats> {
     return this.http.get<any>(`${this.apiUrl}/users/statistics/`)
       .pipe(
@@ -409,7 +409,7 @@ export class UserManagementService {
       );
   }
 
-  // Update user status
+  //enable/disable user
   updateUserStatus(userId: number, isActive: boolean): Observable<any> {
     return this.http.put(`${this.apiUrl}/users/${userId}/`, { is_active: isActive })
       .pipe(
@@ -420,7 +420,7 @@ export class UserManagementService {
       );
   }
 
-  // Delete user (if needed)
+  //remove user
   deleteUser(userId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/users/${userId}/`)
       .pipe(

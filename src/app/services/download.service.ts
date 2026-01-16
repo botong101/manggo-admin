@@ -11,29 +11,21 @@ export class DownloadService {
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Download a single image by URL
-   * @param imageUrl - The URL of the image to download
-   * @param filename - The filename to save as
-   */
+  //download image from url
   downloadImageByUrl(imageUrl: string, filename: string): void {
-    // Create a temporary link element
+    //make temp link
     const link = document.createElement('a');
     link.href = imageUrl;
     link.download = filename;
     link.target = '_blank';
     
-    // Append to body, click, and remove
+    //click and remove
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 
-  /**
-   * Download image using fetch to handle CORS and authentication
-   * @param imageUrl - The URL of the image to download
-   * @param filename - The filename to save as
-   */
+  //download with fetch for cors 
   async downloadImageWithFetch(imageUrl: string, filename: string): Promise<void> {
     try {
       const response = await fetch(imageUrl, {
@@ -56,32 +48,24 @@ export class DownloadService {
       document.body.appendChild(link);
       link.click();
       
-      // Clean up
+      //cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading image:', error);
-      // Fallback to direct download
+      //try direct download if fetch fails
       this.downloadImageByUrl(imageUrl, filename);
     }
   }
 
-  /**
-   * Download image by ID using the API endpoint
-   * @param imageId - The ID of the image to download
-   * @param filename - The filename to save as
-   */
+  //download by id
   downloadImageById(imageId: number, filename: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-image/${imageId}/`, {
       responseType: 'blob'
     });
   }
 
-  /**
-   * Download multiple images as a ZIP file
-   * @param imageIds - Array of image IDs to download
-   * @param zipFilename - The filename for the ZIP file
-   */
+  //download multiple as zip
   downloadImagesAsZip(imageIds: number[], zipFilename: string = 'images.zip'): Observable<Blob> {
     return this.http.post(`${this.apiUrl}/download-images-zip/`, 
       { image_ids: imageIds },
@@ -89,11 +73,7 @@ export class DownloadService {
     );
   }
 
-  /**
-   * Handle the blob response and trigger download
-   * @param blob - The blob to download
-   * @param filename - The filename to save as
-   */
+  //trigger download from blob
   handleBlobDownload(blob: Blob, filename: string): void {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -102,28 +82,24 @@ export class DownloadService {
     document.body.appendChild(link);
     link.click();
     
-    // Clean up
+    //cleanup
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   }
 
-  /**
-   * Get the filename from an image object
-   * @param image - The image object
-   * @returns A clean filename
-   */
+  //get filename from image object
   getImageFilename(image: any): string {
     if (image.original_filename) {
       return image.original_filename;
     }
     
-    // Extract filename from URL
+    //try to get from url
     if (image.image_url || image.image) {
       const url = image.image_url || image.image;
       const urlParts = url.split('/');
       const filename = urlParts[urlParts.length - 1];
       
-      // If no extension, add .jpg as default
+      //add .jpg if no extension
       if (!filename.includes('.')) {
         return `${filename}.jpg`;
       }
@@ -131,37 +107,24 @@ export class DownloadService {
       return filename;
     }
     
-    // Fallback filename
+    //default filename
     return `image_${image.id || Date.now()}.jpg`;
   }
 
-  /**
-   * Generate a filename for bulk downloads
-   * @param prefix - Prefix for the filename
-   * @param extension - File extension
-   * @returns A timestamp-based filename
-   */
+  //make filename for bulk downloads
   generateBulkFilename(prefix: string = 'download', extension: string = 'zip'): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     return `${prefix}_${timestamp}.${extension}`;
   }
 
-  /**
-   * Download all user images as ZIP
-   * @param userId - The user ID
-   * @param username - The username for filename
-   */
+  //download all user images as zip
   downloadUserImages(userId: number, username: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-user-images/${userId}/`, {
       responseType: 'blob'
     });
   }
 
-  /**
-   * Download images by disease type
-   * @param diseaseType - The disease type to filter by
-   * @param diseaseName - The disease name for filename
-   */
+  //download by disease type
   downloadImagesByDisease(diseaseType: string, diseaseName: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-disease-images/`, {
       params: { disease_type: diseaseType },
@@ -169,10 +132,7 @@ export class DownloadService {
     });
   }
 
-  /**
-   * Download verified or unverified images
-   * @param isVerified - Whether to download verified (true) or unverified (false) images
-   */
+  //download verified or unverified
   downloadImagesByVerification(isVerified: boolean): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-verification-images/`, {
       params: { is_verified: isVerified.toString() },
@@ -180,29 +140,16 @@ export class DownloadService {
     });
   }
 
-  /**
-   * Show download progress (for future enhancement)
-   * @param message - Progress message to show
-   */
-
-  /**
-   * Validate image URL before download
-   * @param imageUrl - The image URL to validate
-   * @returns Whether the URL is valid
-   */
+  //check if url is valid
   isValidImageUrl(imageUrl: string): boolean {
     if (!imageUrl) return false;
     
-    // Check if it's a valid URL format
+    //check url format
     const urlPattern = /^(https?:\/\/)|(\/)/;
     return urlPattern.test(imageUrl);
   }
 
-  /**
-   * Get image dimensions (for future enhancement)
-   * @param imageUrl - The image URL
-   * @returns Promise with image dimensions
-   */
+  //get image size
   getImageDimensions(imageUrl: string): Promise<{width: number, height: number}> {
     return new Promise((resolve, reject) => {
       const img = new Image();

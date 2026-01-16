@@ -13,7 +13,7 @@ export interface NotificationData {
   timestamp: string;
   diseaseClassification: string;
   diseaseType: string;
-  detectionType?: string; // Added for fruit/leaf detection
+  detectionType?: string; //fruit or leaf
   confidence: number;
   isRead: boolean;
   imageUrl?: string;
@@ -23,18 +23,18 @@ export interface NotificationData {
   providedIn: 'root'
 })
 export class NotificationService {
-  private apiUrl = environment.apiUrl; // Your Django API URL
+  private apiUrl = environment.apiUrl; //backend url
   private notificationsSubject = new BehaviorSubject<NotificationData[]>([]);
   private unreadCountSubject = new BehaviorSubject<number>(0);
   private pollingInterval: any;
   private isPolling = false;
-  private pollingIntervalMs = 30000; // 30 seconds
+  private pollingIntervalMs = 30000; //30 sec
 
   public notifications$ = this.notificationsSubject.asObservable();
   public unreadCount$ = this.unreadCountSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    // Initialize with empty array - notifications will be loaded only when refresh is clicked
+    //start empty - load when user clicks refresh
   }
 
   loadNotifications(createNew: boolean = false): void {
@@ -44,20 +44,20 @@ export class NotificationService {
       
     this.http.get<any>(url).subscribe({
       next: (response) => {
-        // Handle both direct array and paginated response
+        //handle array or paginated response
         const data = response.notifications || response;
         const notifications: NotificationData[] = data.map((item: any) => ({
           id: item.id,
           userId: item.user_id,
           userName: item.user_name || 'Unknown User',
-          userEmail: (item.user_email || '').replace(/^@/, ''), // Remove leading @ if present
+          userEmail: (item.user_email || '').replace(/^@/, ''), //remove @ if there
           imageId: item.image_id,
           imageName: item.image_name,
           timestamp: item.timestamp,
           diseaseClassification: item.disease_classification,
           diseaseType: item.disease_type,
-          detectionType: item.detection_type || (item.disease_type && item.disease_type.toLowerCase().includes('fruit') ? 'fruit' : 'leaf'), // Better detection logic
-          confidence: typeof item.confidence === 'string' ? parseFloat(item.confidence) : (item.confidence || 0), // Handle both string and number
+          detectionType: item.detection_type || (item.disease_type && item.disease_type.toLowerCase().includes('fruit') ? 'fruit' : 'leaf'), //figure out type
+          confidence: typeof item.confidence === 'string' ? parseFloat(item.confidence) : (item.confidence || 0), //handle string or number
           isRead: item.is_read || false,
           imageUrl: item.image_url
         }));
@@ -71,9 +71,9 @@ export class NotificationService {
     });
   }
 
-  // Public method to manually refresh notifications (loads both read and unread)
+  //manual refresh - gets all notifications
   refreshNotifications(): void {
-    this.loadNotifications(false);  // Load all notifications without creating new ones
+    this.loadNotifications(false);  //load all without creating new
   }
 
   markAsRead(notificationId: string): void {
@@ -152,17 +152,17 @@ export class NotificationService {
     return this.notificationsSubject.value.find(notification => notification.id === id);
   }
 
-  // Live notification polling methods
+  //live polling
   startPolling(): void {
     if (this.isPolling) {
-      return; // Already polling
+      return; //already polling
     }
 
     this.isPolling = true;
-    // Load notifications immediately when starting
+    //load notifs now
     this.loadNotifications(false);
     
-    // Set up interval for automatic polling
+    //setup interval
     this.pollingInterval = setInterval(() => {
       this.loadNotifications(false);
     }, this.pollingIntervalMs);
@@ -183,14 +183,14 @@ export class NotificationService {
   setPollingInterval(intervalMs: number): void {
     this.pollingIntervalMs = intervalMs;
     
-    // If currently polling, restart with new interval
+    //restart with new interval
     if (this.isPolling) {
       this.stopPolling();
       this.startPolling();
     }
   }
 
-  // Enhanced load method that detects new notifications
+  //check for new notifs
   private checkForNewNotifications(): void {
     const currentNotifications = this.notificationsSubject.value;
     const currentIds = new Set(currentNotifications.map(n => n.id));
@@ -214,7 +214,7 @@ export class NotificationService {
           imageUrl: item.image_url
         }));
         
-        // Check for new notifications
+        //find new ones
         const newNotifications = notifications.filter(n => !currentIds.has(n.id));
         
         

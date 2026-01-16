@@ -19,31 +19,32 @@ export interface MangoImage {
     date_joined: string;
   };
   image: string;
-  image_url?: string; // Add this for template compatibility
+  image_url?: string; 
   original_filename: string;
   uploaded_at: string;
-  upload_date?: string; // Add this for template compatibility
+  upload_date?: string; 
   predicted_class: string;
-  disease_classification?: string; // Add this for template compatibility
+  disease_classification?: string; 
   confidence_score: number;
   disease_type: 'leaf' | 'fruit' | 'unknown';
-  model_used?: 'leaf' | 'fruit'; // Add this for the backend's model_used field
-  model_path?: string; // Add this for the actual model file path
+  model_used?: 'leaf' | 'fruit'; 
+  model_path?: string; 
   image_size: string;
   processing_time: number;
   client_ip: string;
-  is_verified?: boolean; // Add this for template compatibility
-  verified_date?: string | null; // Add this for template compatibility
-  notes?: string; // Add this for template compatibility
-  user_feedback?: string; // Add this for user feedback from analysis
-  user_confirmed_correct?: boolean | null; // Add this for user confirmation during analysis
-  hasError?: boolean; // Add this for error state tracking
-  // Location data from EXIF
+  is_verified?: boolean; 
+  verified_date?: string | null; 
+  notes?: string; 
+  user_feedback?: string; 
+  user_confirmed_correct?: boolean | null; 
+  hasError?: boolean; 
+
+  //gps stuff 
   latitude?: number;
   longitude?: number;
   location_accuracy?: number;
   location_consent_given?: boolean;
-  location_accuracy_confirmed?: boolean; // Whether user confirmed location as accurate
+  location_accuracy_confirmed?: boolean; 
   location_address?: string;
   location_source?: string;
 }
@@ -55,7 +56,7 @@ export interface DiseaseStats {
   leaf_images: number;
   fruit_images: number;
   diseases_breakdown: {
-    [key: string]: number; // Your API returns numbers, not objects
+    [key: string]: number;
   };
   recent_uploads: number;
   monthly_uploads: number;
@@ -69,15 +70,14 @@ export interface UserConfirmation {
   id: number;
   image_id: number;
   predicted_disease: string;
-  is_correct: boolean;
   user_feedback?: string;
   location_consent: boolean;
   latitude?: number;
   longitude?: number;
   location_accuracy?: number;
   address?: string;
-  created_at?: string;  // For compatibility
-  confirmed_at?: string; // Backend returns this
+  created_at?: string;  
+  confirmed_at?: string; 
   confidence_score?: number;
   image_data?: {
     image_url: string;
@@ -110,7 +110,7 @@ export class MangoDiseaseService {
 
   constructor(private http: HttpClient) { }
 
-  // Get disease statistics - handle your API's success/data wrapper
+  //get stats for dashboard
   getDiseaseStatistics(): Observable<DiseaseStats> {
     return this.http.get<{success: boolean, data: DiseaseStats}>(`${this.apiUrl}/disease-statistics/`)
       .pipe(
@@ -121,7 +121,6 @@ export class MangoDiseaseService {
           throw new Error('Invalid API response format');
         }),
         catchError(error => {
-          // Return fallback data
           return of({
             total_images: 0,
             healthy_images: 0,
@@ -140,31 +139,25 @@ export class MangoDiseaseService {
       );
   }
 
-  // Get classified images - handle your API's success/data wrapper
-  // BRUTE FORCE VERSION - More readable for beginners
   getClassifiedImages(filters?: any): Observable<{
     images: MangoImage[];
     }> {
-    // Step 1: Create URL parameters for the API request
     let params = new HttpParams();
-    
-    // Step 2: Add any additional filters to the URL parameters
+    //only add filter if it has value
     if (filters) {
-      // Loop through each filter property
       const filterKeys = Object.keys(filters);
       
       for (let i = 0; i < filterKeys.length; i++) {
         const key = filterKeys[i];
         const value = filters[key];
         
-        // Only add the filter if it has a valid value
+        //only add if theres a value
         if (value !== null && value !== undefined && value !== '') {
           params = params.set(key, value.toString());
         }
       }
     }
 
-    // Step 3: Make the HTTP GET request to the backend API
     return this.http.get<{
       success: boolean;
       data: {
@@ -173,23 +166,17 @@ export class MangoDiseaseService {
     }>(`${this.apiUrl}/classified-images/`, { params })
       .pipe(
         map(response => {
-          // Step 4: Check if the API response is valid
+          //check if response is good
           if (!response.success || !response.data) {
             throw new Error('Invalid API response format');
           }
-          
-          // Step 5: Get the images from the response
           const originalImages = response.data.images;
           const transformedImages: MangoImage[] = [];
-          
-          // Step 6: Transform each image to add missing properties
-          // Loop through all images one by one
+  
           for (let i = 0; i < originalImages.length; i++) {
             const image = originalImages[i];
-  
-            // Step 8: Create a new image object with all required properties
             const transformedImage: MangoImage = {
-              // Copy all original properties
+              //copy original stuff
               id: image.id,
               user: image.user,
               image: image.image,
@@ -202,13 +189,13 @@ export class MangoDiseaseService {
               processing_time: image.processing_time,
               client_ip: image.client_ip,
               
-              // Add transformed/missing properties for template compatibility
+              //extra stuff
               disease_classification: image.predicted_class,
               upload_date: image.uploaded_at,
               is_verified: image.is_verified || false,
               notes: image.notes || '',
               
-              // Optional properties
+              //maybe has these
               model_used: image.model_used,
               model_path: image.model_path,
               verified_date: image.verified_date,
@@ -224,17 +211,15 @@ export class MangoDiseaseService {
               location_source: image.location_source
             };
             
-            // Add the transformed image to the array
+            //add to list
             transformedImages.push(transformedImage);
           }
-
-          // Step 9: Return the final result with transformed images and pagination
           return {
             images: transformedImages,
           };
         }),
         catchError(error => {
-          // Step 10: Handle any errors by returning empty data
+          //something went wrong
           console.error('Error fetching classified images:', error);
           
           return of({
@@ -244,7 +229,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Update image verification status
+  //update image verification
   updateImageVerification(imageId: number, isVerified: boolean, notes?: string): Observable<ApiResponse<MangoImage>> {
     const updateData = {
       is_verified: isVerified,
@@ -259,7 +244,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Delete image
+  //delete
   deleteImage(imageId: number): Observable<ApiResponse<any>> {
     return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/classified-images/${imageId}/`)
       .pipe(
@@ -269,7 +254,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Upload and classify image with location data
+
   uploadAndClassifyImage(formData: FormData): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/classify-image/`, formData)
       .pipe(
@@ -279,7 +264,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Bulk update images
+  //update multiple images at once
   bulkUpdateImages(imageIds: number[], updates: Partial<MangoImage>): Observable<ApiResponse<any>> {
     const bulkData = {
       image_ids: imageIds,
@@ -296,7 +281,7 @@ export class MangoDiseaseService {
 
 
 
-  // Get detailed image information
+  //image info
   getImageDetails(imageId: number): Observable<ApiResponse<MangoImage>> {
     return this.http.get<ApiResponse<MangoImage>>(`${this.apiUrl}/classified-images/${imageId}/`)
       .pipe(
@@ -306,7 +291,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Get detailed prediction information for an image
+  //get prediction data
   getImagePredictionDetails(imageId: number): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/classified-images/${imageId}/prediction-details/`)
       .pipe(
@@ -317,7 +302,7 @@ export class MangoDiseaseService {
         const primary = pd?.primary_prediction ?? pd?.primary ?? null;
         let top3 = Array.isArray(pd?.top_3_predictions) ? pd.top_3_predictions : (Array.isArray(pd?.top_3) ? pd.top_3 : []);
 
-        // helper to convert all confidence shapes to numeric percentage
+        //convert to percent
         const toPercent = (raw: any): number => {
           if (raw === null || raw === undefined) return 0;
           if (typeof raw === 'string') {
@@ -332,13 +317,13 @@ export class MangoDiseaseService {
           return 0;
         };
 
-        // ensure top3 exists
+        //top 3 diseases
         if (!Array.isArray(top3) || top3.length === 0) {
           if (primary) top3 = [primary];
           else top3 = [];
         }
 
-        // ensure primary is first and unique
+        //make sure primary is first
         if (primary) {
           top3 = [primary, ...top3.filter((x:any) => x?.disease !== primary.disease)].slice(0,3);
         } else {
@@ -377,12 +362,11 @@ export class MangoDiseaseService {
     );
   }
 
-  // User Confirmation Methods
+  //user feedback stuff
 
-  // Get all user confirmations with filtering
+  //get confirmations with filters
   getUserConfirmations(params?: {
     disease?: string;
-    is_correct?: boolean;
     page?: number;
     page_size?: number;
     start_date?: string;
@@ -413,7 +397,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Get user confirmation for a specific image
+  //get confirmation for specific image
   getUserConfirmationForImage(imageId: number): Observable<UserConfirmation | null> {
     let httpParams = new HttpParams().set('image_id', imageId.toString()).set('page_size', '1');
     const url = `${this.apiUrl}/user-confirmations/`;
@@ -425,7 +409,7 @@ export class MangoDiseaseService {
             return null;
           }
 
-          // backend may return data.confirmations or data.results or data
+          
           const rawList =
             response.data?.confirmations ||
             response.data?.results ||
@@ -446,7 +430,6 @@ export class MangoDiseaseService {
             id: conf.id ?? null,
             image_id: conf.image?.id ?? conf.image_id ?? imageId,
             predicted_disease: conf.predicted_disease ?? conf.prediction ?? '',
-            is_correct: conf.is_correct ?? null,
             user_feedback: conf.user_feedback ?? conf.feedback ?? '',
             location_consent: !!(conf.location?.consent_given ?? conf.location_consent_given ?? conf.location_consent),
             latitude: conf.location?.latitude ?? conf.latitude ?? undefined,
@@ -463,7 +446,7 @@ export class MangoDiseaseService {
             },
           };
 
-          // optional: confidence mapping
+          //gps accuracy
           (normalized as any).location_accuracy = conf.location?.accuracy ?? conf.location_accuracy ?? undefined;
 
           return normalized;
@@ -474,7 +457,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Get user confirmation statistics
+  //get confirmation stats
   getConfirmationStatistics(): Observable<ApiResponse<ConfirmationStats>> {
     return this.http.get<ApiResponse<ConfirmationStats>>(`${this.apiUrl}/confirmation-statistics/`)
       .pipe(
@@ -484,10 +467,9 @@ export class MangoDiseaseService {
       );
   }
 
-  // Export user confirmations to CSV
+  
   exportConfirmations(params?: {
     disease?: string;
-    is_correct?: boolean;
     start_date?: string;
     end_date?: string;
   }): Observable<Blob> {
@@ -512,7 +494,7 @@ export class MangoDiseaseService {
     );
   }
 
-  // Get confirmations by disease (grouped)
+  //group by disease
   getConfirmationsByDisease(): Observable<ApiResponse<{
     [disease: string]: {
       correct: UserConfirmation[];
@@ -529,9 +511,9 @@ export class MangoDiseaseService {
       );
   }
 
-  // Additional methods for legacy components
 
-  // Get images with optional filtering
+
+  //get images with optional filtering
   getImages(params?: any): Observable<ApiResponse<MangoImage[]>> {
     let httpParams = new HttpParams();
     
@@ -552,7 +534,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Verify an image
+  //mark image as verified
   verifyImage(imageId: number): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/classified-images/${imageId}/verify/`, {})
       .pipe(
@@ -562,7 +544,7 @@ export class MangoDiseaseService {
       );
   }
 
-  // Download images as ZIP
+  //download images as zip
   downloadImagesZip(imageIds: number[]): Observable<Blob> {
     return this.http.post(`${this.apiUrl}/download-images-zip/`, 
       { image_ids: imageIds },
@@ -574,7 +556,7 @@ export class MangoDiseaseService {
     );
   }
 
-  // Download single image
+  //download one image
   downloadImage(imageId: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-image/${imageId}/`, {
       responseType: 'blob'
@@ -585,7 +567,7 @@ export class MangoDiseaseService {
     );
   }
 
-  // Download user images
+  //download all images from a user
   downloadUserImages(userId: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-user-images/${userId}/`, {
       responseType: 'blob'
@@ -596,7 +578,7 @@ export class MangoDiseaseService {
     );
   }
 
-  // Download images by disease type
+  //download by disease
   downloadImagesByDisease(diseaseType: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-disease-images/`, {
       params: { disease_type: diseaseType },
@@ -608,7 +590,7 @@ export class MangoDiseaseService {
     );
   }
 
-  // Download verified/unverified images
+  //download verified or not
   downloadImagesByVerification(isVerified: boolean): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-verification-images/`, {
       params: { is_verified: isVerified.toString() },

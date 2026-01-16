@@ -109,7 +109,7 @@ export class AuthService {
     return this.hasToken();
   }
 
-  // Method to refresh authentication state
+  //refresh auth state
   refreshAuthState(): void {
     const isAuth = this.hasToken();
     const user = this.getCurrentUser();

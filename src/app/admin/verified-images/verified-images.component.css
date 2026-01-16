@@ -1,4 +1,4 @@
-/* Verified images page styling */
+
 .verified-header {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
@@ -10,7 +10,6 @@
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
-/* Download button styling */
 .download-btn {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   transition: all 0.2s ease;

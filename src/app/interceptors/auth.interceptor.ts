@@ -11,7 +11,7 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler) {
     const token = this.authService.getToken();
     
-    // Log all API requests for debugging
+    //debug logging
     
     if (token) {
       const authReq = req.clone({

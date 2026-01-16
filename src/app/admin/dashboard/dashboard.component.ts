@@ -22,18 +22,18 @@ interface DiseaseCategory {
 })
 export class DashboardComponent implements OnInit {
   
-  // Current date for display
+  //today's date
   currentDate = new Date().toLocaleDateString();
   
-  // Loading states
+  //loading stuff
   loading = true;
   error: string | null = null;
   
-  // Real data from backend
+  //data from backend
   stats: DiseaseStats | null = null;
   recentImages: MangoImage[] = [];
   
-  // Statistics
+  //counts
   totalImages = 0;
   healthyImages = 0;
   diseasedImages = 0;
@@ -52,10 +52,7 @@ export class DashboardComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-
-      // Skip connection test - load data directly
-
-      // Load statistics
+      //load stats
       const stats = await this.mangoDiseaseService.getDiseaseStatistics().toPromise();
       
       if (stats) {
@@ -63,14 +60,14 @@ export class DashboardComponent implements OnInit {
         this.updateStatistics(stats);
       }
 
-      // Load recent images
+      //load recent images
       const recentImagesResponse = await this.mangoDiseaseService.getClassifiedImages().toPromise();
       
       if (recentImagesResponse) {
-        this.recentImages = recentImagesResponse.images; // Fixed: use .images instead of .results
+        this.recentImages = recentImagesResponse.images; 
       }
 
-      // If we got here, everything loaded successfully
+      //done loading
       this.loading = false;
 
     } catch (error) {
@@ -78,7 +75,7 @@ export class DashboardComponent implements OnInit {
       this.error = 'Failed to load dashboard data. Please try again.';
       this.loading = false;
       
-      // Load fallback static data
+      //use backup data
       this.loadStaticData();
     }
   }
@@ -92,7 +89,7 @@ export class DashboardComponent implements OnInit {
 
 
   private loadStaticData() {
-    // Static fallback data
+    //backup data if api fails
     this.totalImages = 0;
     this.healthyImages = 0;
     this.diseasedImages = 0;
@@ -101,7 +98,7 @@ export class DashboardComponent implements OnInit {
 
 
 
-    // Navigation methods
+    //go to pages
   navigateToUploadImages() {
     this.router.navigate(['/admin/upload-images']);
   }
@@ -119,19 +116,18 @@ export class DashboardComponent implements OnInit {
   }
   
   navigateToModelSettings() {
-    // Navigate to model settings when available
+    //todo: add model settings page
   }
 
-  async exportDataset() {
+  /*async exportDataset() {
     try {
-      // Export functionality moved to admin dashboard views
-      // TODO: Implement direct backend call for dataset export
+      //export moved to backend
       alert('Export functionality will be available in a future update');
     } catch (error) {
       console.error('Error exporting dataset:', error);
       alert('Failed to export dataset. Please try again.');
     }
-  }
+  }*/
 
 
 }

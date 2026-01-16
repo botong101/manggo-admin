@@ -193,11 +193,12 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Image Overview</h3>
             
             <div class="grid grid-cols-2 gap-4">
+              <!-- file name 
               <div class="bg-gray-50 p-4 rounded-lg">
                 <div class="text-sm text-gray-600 mb-1">File Name</div>
                 <div class="font-medium">{{ imageData.original_filename }}</div>
               </div>
-              
+              -->
               <div class="bg-gray-50 p-4 rounded-lg">
                 <div class="text-sm text-gray-600 mb-1">Image ID</div>
                 <div class="font-medium">#{{ imageData.id }}</div>
@@ -422,11 +423,11 @@
                     {{ predictionData.data.primary_prediction.treatment || 'Treatment information is being updated. Please consult with an agricultural expert for specific recommendations.' }}
                   </p>
                   
-                  <!-- Debug information (remove in production) -->
+                  <!-- Debug information 
                   <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800" 
                        *ngIf="!predictionData.data.primary_prediction.treatment">
                     <strong>Debug:</strong> Disease name: "{{ predictionData.data.primary_prediction.disease }}"
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>
@@ -468,17 +469,19 @@
                     <div class="text-2xl font-bold text-blue-600">{{ predictionData.data.prediction_summary.confidence_level }}</div>
                     <div class="text-sm text-gray-600">Overall Confidence</div>
                   </div>
+                  <!-- skip
                   <div class="text-center">
                     <div class="text-2xl font-bold text-blue-600">{{ predictionData.data.prediction_summary.total_diseases_checked }}</div>
                     <div class="text-sm text-gray-600">Diseases Analyzed</div>
                   </div>
+                  -->
                 </div>
               </div>
             </div>
           </div>
           
           <div *ngIf="!predictionData" class="text-center py-8">
-            <div class="text-gray-400 text-4xl mb-4">🧠</div>
+            <div class="text-gray-400 text-4xl mb-4"></div>
             <p class="text-gray-600">No detailed prediction data available</p>
           </div>
         </div>
@@ -499,12 +502,12 @@
                   <div class="text-sm text-gray-600 mb-1">Image ID</div>
                   <div class="font-medium text-gray-900">#{{ imageData.id }}</div>
                 </div>
-                
+                <!--skip
                 <div class="bg-gray-50 p-4 rounded-lg">
                   <div class="text-sm text-gray-600 mb-1">Original Filename</div>
                   <div class="font-medium text-gray-900">{{ imageData.filename || 'Unknown' }}</div>
                 </div>
-                
+                -->
                 <div class="bg-gray-50 p-4 rounded-lg">
                   <div class="text-sm text-gray-600 mb-1">Upload Date</div>
                   <div class="font-medium text-gray-900">{{ formatDateTime(imageData.uploaded_at) }}</div>
@@ -608,7 +611,7 @@
               </div>
             </div>
             
-            <!-- EXIF Location Data from Image -->
+            <!--Location Data from Image -->
             <div *ngIf="imageData && imageData.location_consent_given && (imageData.latitude || imageData.longitude)" 
                  class="bg-white p-6 rounded-lg border border-green-200 mb-6">
               <h4 class="text-lg font-semibold text-gray-800 mb-4">
@@ -679,7 +682,7 @@
               </div>
             </div>
 
-            <!-- No Location Data Available -->
+            <!--No Location Data Available -->
             <div *ngIf="(!imageData?.location_consent_given || (!imageData?.latitude && !imageData?.longitude)) && (!userConfirmation || !userConfirmation.location_consent)" 
                  class="bg-white p-6 rounded-lg border border-gray-200 mb-6">
               <h4 class="text-lg font-semibold text-gray-800 mb-4">
@@ -694,7 +697,7 @@
               </div>
             </div>
             
-            <!-- AI Model Information -->
+            <!--AI Model Information -->
             <div class="bg-white p-6 rounded-lg border border-gray-200 mb-6">
               <h4 class="text-lg font-semibold text-gray-800 mb-4">
                 <i class="fas fa-brain mr-2"></i>AI Model Information
@@ -724,14 +727,10 @@
                 </div>
                 
                 <div class="bg-purple-50 p-4 rounded-lg border border-purple-200" *ngIf="userConfirmation">
-                  <div class="text-sm text-purple-700 mb-1">User Verification</div>
-                  <div class="font-medium" 
-                       [class.text-green-600]="userConfirmation.is_correct"
-                       [class.text-red-600]="!userConfirmation.is_correct">
-                    <i class="fas mr-1" 
-                       [class.fa-check-circle]="userConfirmation.is_correct"
-                       [class.fa-times-circle]="!userConfirmation.is_correct"></i>
-                    {{ userConfirmation.is_correct ? 'Verified as Correct' : 'Reported as Incorrect' }}
+                  <div class="text-sm text-purple-700 mb-1">User Feedback</div>
+                  <div class="font-medium text-blue-600">
+                    <i class="fas fa-comment mr-1"></i>
+                    {{ userConfirmation.predicted_disease }}
                   </div>
                 </div>
                 
@@ -767,7 +766,7 @@
                 </div>
               </div>
               
-              <!-- Image URL Debug -->
+              <!--Image URL Debug -->
               <div class="mt-6">
                 <h5 class="text-md font-medium text-gray-800 mb-3">Image URL</h5>
                 <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
@@ -788,53 +787,30 @@
           </div>
         </div>
         
-        <!-- Feedback Tab -->
+        <!--Feedback Tab -->
         <div *ngIf="activeTab === 'feedback'" class="space-y-6">
           <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">User Verification & Feedback</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">User Feedback</h3>
             
             <div *ngIf="userConfirmation" class="space-y-6">
               
-              <!-- User Verification Decision (is_correct) -->
-              <div class="bg-white p-6 rounded-lg border-2" 
-                   [class.border-green-300]="userConfirmation.is_correct"
-                   [class.border-red-300]="!userConfirmation.is_correct">
+              <!--User Confirmation Details -->
+              <div class="bg-white p-6 rounded-lg border-2 border-blue-300">
                 <div class="flex items-center justify-between mb-4">
                   <h4 class="text-lg font-semibold text-gray-800">
                     <i class="fas fa-clipboard-check mr-2"></i>
-                    User Verification Decision
+                    User Confirmation Details
                   </h4>
-                  <div class="text-right">
-                    <span class="inline-flex items-center px-4 py-2 text-lg font-bold rounded-full"
-                          [class.bg-green-100]="userConfirmation.is_correct"
-                          [class.text-green-800]="userConfirmation.is_correct"
-                          [class.bg-red-100]="!userConfirmation.is_correct"
-                          [class.text-red-800]="!userConfirmation.is_correct">
-                      <i [class.fas]="true"
-                         [class.fa-check-circle]="userConfirmation.is_correct"
-                         [class.fa-times-circle]="!userConfirmation.is_correct"
-                         class="mr-2"></i>
-                      {{ userConfirmation.is_correct ? 'CORRECT MATCH' : 'INCORRECT MATCH' }}
-                    </span>
-                  </div>
                 </div>
                 
                 <div class="bg-gray-50 p-4 rounded-lg">
                   <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span class="text-gray-600 font-medium">AI Predicted Disease:</span>
+                      <span class="text-gray-600 font-medium">Predicted Disease:</span>
                       <div class="font-semibold text-gray-800 mt-1">{{ userConfirmation.predicted_disease }}</div>
                     </div>
                     <div>
-                      <span class="text-gray-600 font-medium">User Decision:</span>
-                      <div class="font-semibold mt-1" 
-                           [class.text-green-600]="userConfirmation.is_correct"
-                           [class.text-red-600]="!userConfirmation.is_correct">
-                        {{ userConfirmation.is_correct ? 'Yes, this is a match' : 'No, this does not match' }}
-                      </div>
-                    </div>
-                    <div>
-                      <span class="text-gray-600 font-medium">Verified On:</span>
+                      <span class="text-gray-600 font-medium">Confirmed On:</span>
                       <div class="font-semibold text-gray-800 mt-1">{{ formatDateTime(userConfirmation.confirmed_at || userConfirmation.created_at || '') }}</div>
                     </div>
                     <div *ngIf="userConfirmation.confidence_score">

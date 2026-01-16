@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router'; // Add this import
+import { RouterModule } from '@angular/router';
 import { AdminRoutingModule } from './admin-routing.module';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ImageDetailComponent } from './image-detail/image-detail.component';
@@ -26,7 +26,7 @@ import { UserManagementComponent } from './user-management/user-management.compo
   imports: [
     CommonModule,
     FormsModule,
-    RouterModule, // Add this to imports
+    RouterModule, //needed for routing
     AdminRoutingModule
   ]
 })

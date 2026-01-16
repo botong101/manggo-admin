@@ -36,10 +36,10 @@ export class VerifiedImagesComponent implements OnInit {
   downloadingAll = false;
   updatingSelected = false;
   
-  // Confidence threshold for unknown images
-  private readonly UNKNOWN_CONFIDENCE_THRESHOLD = 50; // Images below 50% confidence are considered unknown
+  //below 50 confidence = unknown
+  private readonly UNKNOWN_CONFIDENCE_THRESHOLD = 50; 
   
-  // Filter options
+  //filter stuff
   filterType: 'all' | 'leaf' | 'fruit' = 'all';
   searchTerm = '';
   sortBy: 'disease' | 'count' | 'date' = 'disease';
@@ -61,51 +61,47 @@ export class VerifiedImagesComponent implements OnInit {
 
   async loadAllImages() {
     try {
-      // Step 1: Show loading state to user
+      //show loading
       this.loading = true;
       this.error = null;
 
-      // Step 2: Generate timestamp to prevent browser caching
-      // This ensures we always get fresh data from the server
+      
+      //cache busting to get fresh data
       const timestamp = new Date().getTime();
       
-      // Step 3: Fetch all images from the backend API
-      // We request 5000 images per page (a large number to get all images)
+      
       const response = await firstValueFrom(
         this.mangoDiseaseService.getClassifiedImages({
-          _t: timestamp  // Cache-busting parameter
+          _t: timestamp 
         }),
       );
 
-      // Step 4: Check if we received valid data
+      //check if we got images
       if (!response || !response.images) {
         this.error = 'No images found';
         this.loading = false;
         return;
       }
 
-      // Step 5: Get all images from the response
+      //get all images
       const allImages = response.images;
       this.totalAllCount = allImages.length;
       
-      // Step 6: Create empty arrays to categorize images
+      //sort into categories
       const verifiedImages: MangoImage[] = [];
       const unverifiedImages: MangoImage[] = [];
       const unknownImages: MangoImage[] = [];
       
-      // Step 7: Loop through each image and categorize it
-      // We check confidence score and verification status
+
+      //put images in right category
       for (let i = 0; i < allImages.length; i++) {
         const image = allImages[i];
         const confidence = this.getConfidenceScore(image);
         
-        // Check if image has low confidence (below 50%)
+     
         if (confidence < this.UNKNOWN_CONFIDENCE_THRESHOLD) {
-          // This is an unknown/low confidence image
           unknownImages.push(image);
         } else {
-          // This is a known/high confidence image
-          // Now check if it's verified or not
           if (image.is_verified === true) {
             verifiedImages.push(image);
           } else {
@@ -114,31 +110,31 @@ export class VerifiedImagesComponent implements OnInit {
         }
       }
       
-      // Step 8: Update the count totals
+      //update counts
       this.totalVerifiedCount = verifiedImages.length;
       this.totalUnverifiedCount = unverifiedImages.length;
       this.totalUnknownCount = unknownImages.length;
       
-      // Step 9: Create the folder structure for display
+      //make folders
       this.createMainFolders(allImages, verifiedImages, unverifiedImages, unknownImages);
       
-      // Step 10: Force Angular to update the UI
+      //force change detection
       this.cdr.detectChanges();
       
-      // Step 11: Hide loading state
+      //disable loading state
       this.loading = false;
 
     } catch (error) {
       console.error('Error loading images:', error);
       
-      // Handle authentication errors (user not logged in)
-      if (error && (error as any).status === 401) {
-        this.authService.logout(); // Clear stored tokens
-        this.router.navigate(['/login']); // Redirect to login page
+      //kick out if not logged in
+      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        this.authService.logout(); 
+        this.router.navigate(['/login']);
         return;
       }
       
-      // Show error message to user
+      //show error
       this.error = 'Failed to load images. Please try again.';
       this.loading = false;
     }
@@ -156,32 +152,33 @@ export class VerifiedImagesComponent implements OnInit {
         count: allImages.length,
         expanded: false,
         type: 'all',
-        subFolders: [...allSubFolders], // Copy for filtering
-        originalSubFolders: allSubFolders // Original data
+        //for filtering
+        subFolders: [...allSubFolders], 
+        originalSubFolders: allSubFolders 
       },
       {
         name: 'Verified Images',
         count: verifiedImages.length,
         expanded: false,
         type: 'verified',
-        subFolders: [...verifiedSubFolders], // Copy for filtering
-        originalSubFolders: verifiedSubFolders // Original data
+        subFolders: [...verifiedSubFolders],
+        originalSubFolders: verifiedSubFolders
       },
       {
         name: 'Unverified Images',
         count: unverifiedImages.length,
         expanded: false,
         type: 'unverified',
-        subFolders: [...unverifiedSubFolders], // Copy for filtering
-        originalSubFolders: unverifiedSubFolders // Original data
+        subFolders: [...unverifiedSubFolders],
+        originalSubFolders: unverifiedSubFolders
       },
       {
         name: 'Unknown Images',
         count: unknownImages.length,
         expanded: false,
         type: 'unknown',
-        subFolders: [...unknownSubFolders], // Copy for filtering
-        originalSubFolders: unknownSubFolders // Original data
+        subFolders: [...unknownSubFolders],
+        originalSubFolders: unknownSubFolders
       }
     ];
     
@@ -192,7 +189,7 @@ export class VerifiedImagesComponent implements OnInit {
   groupImagesByDisease(images: MangoImage[], verificationStatus: 'all' | 'verified' | 'unverified' | 'unknown'): VerifiedDiseaseFolder[] {
     const diseaseMap = new Map<string, MangoImage[]>();
 
-    // Filter by date range if specified
+    //date filter
     let filteredImages = images;
     if (this.dateRange !== 'all') {
       const now = new Date();
@@ -219,7 +216,7 @@ export class VerifiedImagesComponent implements OnInit {
       const disease = image.predicted_class || 'Unknown';
       const diseaseType = this.getDiseaseType(image);
       
-      // Create a unique key that combines disease name and type
+      //make unique key with disease and type
       const folderKey = `${disease}_${diseaseType}`;
       
       if (!diseaseMap.has(folderKey)) {
@@ -232,7 +229,6 @@ export class VerifiedImagesComponent implements OnInit {
       const disease = imgs[0].predicted_class || 'Unknown';
       const diseaseType = this.getDiseaseType(imgs[0]);
       
-      // Create display name with type suffix for clarity
       const displayName = diseaseType !== 'unknown' ? 
         `${disease} (${diseaseType.charAt(0).toUpperCase() + diseaseType.slice(1)})` : 
         disease;
@@ -248,7 +244,7 @@ export class VerifiedImagesComponent implements OnInit {
       };
     });
 
-    // Sort folders
+    //sort
     folders.sort((a, b) => {
       switch (this.sortBy) {
         case 'count':
@@ -267,7 +263,7 @@ export class VerifiedImagesComponent implements OnInit {
   }
 
   sortFolders() {
-    // Update all main folders
+    //update all folders
     this.mainFolders.forEach(mainFolder => {
       mainFolder.subFolders.sort((a, b) => {
         switch (this.sortBy) {
@@ -284,7 +280,7 @@ export class VerifiedImagesComponent implements OnInit {
       });
     });
     
-    // Update the main diseaseFolders array for backward compatibility
+    //for backward compat
     if (this.mainFolders.length > 0) {
       this.diseaseFolders = this.mainFolders[0].subFolders;
     }
@@ -298,12 +294,14 @@ export class VerifiedImagesComponent implements OnInit {
     mainFolder.expanded = !mainFolder.expanded;
     this.cdr.detectChanges();
   }
-  // Download functionality
+
+
+  //download folder
   async downloadFolderImages(folder: VerifiedDiseaseFolder) {
     try {
       folder.downloading = true;
       
-      // Check if there are unverified images in this folder
+      //check for unverified images
       const unverifiedImages = folder.images.filter(img => !img.is_verified);
       
       if (unverifiedImages.length > 0) {
@@ -315,7 +313,7 @@ export class VerifiedImagesComponent implements OnInit {
         
         if (!confirmDownload) {
           folder.downloading = false;
-          return; // User cancelled the download
+          return; //user cancelled
         }
       }
       
@@ -375,7 +373,7 @@ export class VerifiedImagesComponent implements OnInit {
       this.downloadingAll = true;
       const zip = new JSZip();
 
-      // Get unique images from currently visible main folders to avoid duplicates
+      //get unique images from visible folders
       const uniqueImagesMap = new Map<number, MangoImage>();
       this.getFilteredMainFolders().forEach(mainFolder => {
         mainFolder.subFolders.forEach(subFolder => {
@@ -387,7 +385,7 @@ export class VerifiedImagesComponent implements OnInit {
 
       const allImages = Array.from(uniqueImagesMap.values());
 
-      // Check if there are unverified images
+      //check for unverified
       const unverifiedImages = allImages.filter(img => !img.is_verified);
       
       if (unverifiedImages.length > 0) {
@@ -399,11 +397,11 @@ export class VerifiedImagesComponent implements OnInit {
         
         if (!confirmDownload) {
           this.downloadingAll = false;
-          return; // User cancelled the download
+          return; //cancelled
         }
       }
 
-      // Group images by disease for folder structure
+      //group by disease
       const diseaseMap = new Map<string, MangoImage[]>();
       allImages.forEach(image => {
         const disease = image.predicted_class || 'Unknown';
@@ -417,7 +415,7 @@ export class VerifiedImagesComponent implements OnInit {
       });
 
 
-      // Create folders for each disease with type
+      //create folders for each disease
       for (const [folderName, images] of diseaseMap.entries()) {
         const diseaseFolder = zip.folder(folderName);
         
@@ -473,8 +471,7 @@ export class VerifiedImagesComponent implements OnInit {
     try {
       const zip = new JSZip();
 
-      // Get unique images from selected IDs to avoid duplicates
-      // Use a Map to ensure uniqueness by image ID
+      //get unique images from selection
       const uniqueImagesMap = new Map<number, MangoImage>();
       
       this.mainFolders.forEach(mainFolder => {
@@ -490,7 +487,7 @@ export class VerifiedImagesComponent implements OnInit {
       const selectedImageData = Array.from(uniqueImagesMap.values());
       
       
-      // Check if there are unverified images in the selection
+      //check for unverified in selection
       const unverifiedImages = selectedImageData.filter(img => !img.is_verified);
       
       if (unverifiedImages.length > 0) {
@@ -501,11 +498,11 @@ export class VerifiedImagesComponent implements OnInit {
         );
         
         if (!confirmDownload) {
-          return; // User cancelled the download
+          return; //cancelled
         }
       }
 
-      // Group images by disease for folder structure
+      //group by disease
       const diseaseMap = new Map<string, MangoImage[]>();
       selectedImageData.forEach(image => {
         const disease = image.predicted_class || 'Unknown';
@@ -519,7 +516,7 @@ export class VerifiedImagesComponent implements OnInit {
       });
 
 
-      // Create folders for each disease and download images
+      //create folders and download
       for (const [folderName, images] of diseaseMap.entries()) {
         const diseaseFolder = zip.folder(folderName);
         
@@ -578,7 +575,7 @@ export class VerifiedImagesComponent implements OnInit {
   }
 
   getImageUrl(image: MangoImage): string {
-    const baseUrl = environment.apiUrl; // Use environment config
+    const baseUrl = environment.apiUrl; //env config
     const originalUrl = image.image_url || image.image;
     
     if (!originalUrl) {
@@ -589,7 +586,7 @@ export class VerifiedImagesComponent implements OnInit {
       return originalUrl;
     }
     
-    // Use custom media endpoint
+    //custom media endpoint
     let filePath = '';
     if (originalUrl.startsWith('/media/')) {
       filePath = originalUrl.substring(7);
@@ -611,20 +608,20 @@ export class VerifiedImagesComponent implements OnInit {
     return diseaseType === 'leaf' ? 'text-green-600' : 'text-orange-600';
   }
 
-  // Get disease type - use the disease_type field from the API
+  //figure out disease type from api
   getDiseaseType(image: MangoImage): 'leaf' | 'fruit' | 'unknown' {
     
-    // Use the disease_type field from the backend API (most reliable)
+    //use disease_type from backend
     if (image.disease_type && image.disease_type !== 'unknown') {
       return image.disease_type;
     }
     
-    // Fallback to model_used if available
+    //try model_used
     if (image.model_used) {
       return image.model_used;
     }
     
-    // If neither field is available, return unknown
+    //give up
     return 'unknown';
   }
 
@@ -656,14 +653,14 @@ export class VerifiedImagesComponent implements OnInit {
     }
   }
 
-  // Helper method to get confidence score with proper formatting
+  //get confidence as percent
   getConfidenceScore(image: MangoImage): number {
     if (image.confidence_score) {
-      // If confidence_score is between 0 and 1, convert to percentage
+      //convert if 0-1 range
       if (image.confidence_score <= 1) {
         return image.confidence_score * 100;
       }
-      // If already a percentage, return as is
+      //already percent
       return image.confidence_score;
     }
     return 0;
@@ -672,11 +669,11 @@ export class VerifiedImagesComponent implements OnInit {
   
 
 
-  //FILTER LOGICS
+  //FILTER STUFF
   onFilterChange() {
-    // Force update of filtered data
+    //update filtered data
     this.getFilteredMainFolders();
-    // Trigger change detection to update filtered results
+    //refresh view
     this.cdr.detectChanges();
   }
   getFilteredMainFolders(): MainFolder[] {
@@ -734,7 +731,7 @@ export class VerifiedImagesComponent implements OnInit {
 
 
 
-  // BUTTON ACTIONS
+  //BUTTONS
 
   toggleImageSelection(imageId: number): void{
     this.selectedImages = this.buttonsService.toggleImageSelection(imageId, this.selectedImages);
@@ -743,7 +740,7 @@ export class VerifiedImagesComponent implements OnInit {
   selectAllInFolder(folder: VerifiedDiseaseFolder): void{
     this.selectedImages = this.buttonsService.selectAllInFolder(folder, this.selectedImages);
   }
-  // Helper method to check if all images in a folder are selected
+  //check if all in folder selected
   isAllInFolderSelected(folder: VerifiedDiseaseFolder): boolean {
     return this.buttonsService.isAllInFolderSelected(folder, this.selectedImages);
   }

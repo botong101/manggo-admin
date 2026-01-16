@@ -105,7 +105,7 @@ export class UserManagementComponent implements OnInit {
   getFilteredFolders(): UserFolder[] {
     let filtered = this.userFolders;
 
-    // Apply search filter only
+    //search filter
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(folder => {
@@ -116,7 +116,7 @@ export class UserManagementComponent implements OnInit {
       });
     }
 
-    // Apply legacy status filter (if needed)
+    //status filter
     if (this.filterStatus !== 'all') {
       filtered = filtered.filter(folder => {
         if (this.filterStatus === 'active') {
@@ -166,7 +166,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   onSearchChange() {
-    // Debounce search
+    //debounce
     setTimeout(() => {
       this.onFilterChange();
     }, 300);
@@ -199,7 +199,7 @@ export class UserManagementComponent implements OnInit {
     return new Date(dateString).toLocaleDateString();
   }
 
-  // Computed properties for template
+  //computed stuff
   getAverageImagesPerUser(): number {
     return this.userStats?.average_images_per_user || 0;
   }
@@ -219,12 +219,12 @@ export class UserManagementComponent implements OnInit {
     return this.getFilteredFolders();
   }
 
-  // Filter methods
+  //filter stuff
   filterUsers() {
-    // The filtering is handled by getFilteredFolders() method
+    //filtering done by getFilteredFolders()
   }
 
-  // Utility methods for template
+  //utility methods
   getUserInitials(user: User): string {
     const firstName = user.first_name || '';
     const lastName = user.last_name || '';
@@ -260,7 +260,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   async toggleUserStatus(user: User, event: Event) {
-    event.stopPropagation(); // Prevent folder expansion
+    event.stopPropagation(); //prevent expand
     
     const action = user.is_active ? 'disable' : 'enable';
     const confirmed = confirm(`Are you sure you want to ${action} user "${this.getUserDisplayName(user)}"? This will ${user.is_active ? 'prevent them from logging in' : 'allow them to log in again'}.`);
@@ -270,10 +270,10 @@ export class UserManagementComponent implements OnInit {
     try {
       await this.userManagementService.updateUserStatus(user.id, !user.is_active).toPromise();
       
-      // Update the user status in the local array
+      //update local status
       user.is_active = !user.is_active;
       
-      // Update user stats
+      //update stats
       if (user.is_active) {
         this.userStats!.active_users++;
         this.userStats!.inactive_users--;
@@ -282,7 +282,7 @@ export class UserManagementComponent implements OnInit {
         this.userStats!.inactive_users++;
       }
       
-      // Show success message
+      //show msg
       const statusText = user.is_active ? 'enabled' : 'disabled';
       alert(`User "${this.getUserDisplayName(user)}" has been ${statusText} successfully.`);
       

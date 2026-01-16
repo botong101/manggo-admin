@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  //apiUrl: 'https://mangoapi.up.railway.app/api'  // Your Django server URL
-  apiUrl: 'http://127.0.0.1:8000/api'  // Local development - uncomment to use local server
+  //apiUrl: 'https://mangoapi.up.railway.app/api'  
+  apiUrl: 'http://manggasense.up.railway.app/api' 
 };

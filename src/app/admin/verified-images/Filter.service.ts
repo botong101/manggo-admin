@@ -99,7 +99,7 @@ export class FilterService {
                 count: filteredImages.length
 
             };
-        }).filter(folder => folder.images.length > 0); // para mo return only none 0 disease folder
+        }).filter(folder => folder.images.length > 0); //only folders with images
     }
 
     applySorting(

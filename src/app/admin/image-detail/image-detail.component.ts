@@ -49,8 +49,8 @@ export interface ImageDetailData extends MangoImage {
   image_type?: string;
   disease_detected?: string;
   confidence?: number;
-  user_feedback?: string; // Explicitly add user_feedback property
-  location_accuracy_confirmed?: boolean; // Explicitly add location_accuracy_confirmed property
+  user_feedback?: string; //user feedback field
+  location_accuracy_confirmed?: boolean; //location accuracy flag
 }
 
 @Component({
@@ -67,7 +67,7 @@ export class ImageDetailComponent implements OnInit {
   loading = true;
   error: string | null = null;
   
-  // UI state
+  //ui stuff
   activeTab: 'overview' | 'prediction' | 'technical' | 'history' | 'feedback' = 'overview';
   showFullImage = false;
   updating = false;
@@ -94,23 +94,23 @@ export class ImageDetailComponent implements OnInit {
       this.loading = true;
       this.error = null;
 
-      // Load basic image data
+      //get image data
       const imageResponse = await firstValueFrom(this.mangoDiseaseService.getImageDetails(this.imageId));
       if (imageResponse && imageResponse.success) {
         this.imageData = imageResponse.data;
       }
 
-      // Load prediction details
+      //get predictions
       const predictionResponse = await firstValueFrom(this.mangoDiseaseService.getImagePredictionDetails(this.imageId));
       if (predictionResponse && predictionResponse.success) {
         this.predictionData = predictionResponse;
       }
 
-      // Load user confirmation for this image
+      //get user confirmation
       try {
         this.userConfirmation = await firstValueFrom(this.mangoDiseaseService.getUserConfirmationForImage(this.imageId)) || null;
       } catch (confirmationError) {
-        // Don't show error for missing confirmation - it's optional
+        //no confirmation is ok
       }
 
       this.loading = false;
@@ -196,7 +196,7 @@ export class ImageDetailComponent implements OnInit {
       return originalUrl;
     }
     
-    // Use custom media endpoint
+    //custom media endpoint
     let filePath = '';
     if (originalUrl.startsWith('/media/')) {
       filePath = originalUrl.substring(7);
@@ -235,12 +235,12 @@ export class ImageDetailComponent implements OnInit {
     const image = this.imageData;
     if (!image) return 'unknown';
     
-    // Use the disease_type field from the backend API (most reliable)
+    //check disease_type from api
     if (image.disease_type && image.disease_type !== 'unknown') {
       return image.disease_type;
     }
     
-    // Fallback to model_used if available
+    //fallback to model_used
     if (image.model_used) {
       return image.model_used;
     }
@@ -254,7 +254,7 @@ export class ImageDetailComponent implements OnInit {
     
     if (modelPath) {
       // Extract model name from the file path
-      const fileName = modelPath.split('/').pop()?.split('\\').pop(); // Handle both / and \ path separators
+      const fileName = modelPath.split('/').pop()?.split('\\').pop(); //handle both / and \\ paths
       
       if (fileName) {
         // Parse specific model file names (order matters - more specific patterns first)

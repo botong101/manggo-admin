@@ -11,8 +11,8 @@ import { UserManagementComponent } from './user-management/user-management.compo
 const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: 'dashboard', component: DashboardComponent },
-  { path: 'images', redirectTo: '/admin/verified-images', pathMatch: 'full' }, // Redirect to new gallery
-  { path: 'image-gallery', redirectTo: '/admin/verified-images', pathMatch: 'full' }, // Redirect to new gallery
+  { path: 'images', redirectTo: '/admin/verified-images', pathMatch: 'full' }, //redirect
+  { path: 'image-gallery', redirectTo: '/admin/verified-images', pathMatch: 'full' }, //redirect
   { path: 'image-detail/:id', component: ImageDetailComponent },
   { path: 'verified-images', component: VerifiedImagesComponent },
   { path: 'user-management', component: UserManagementComponent },
