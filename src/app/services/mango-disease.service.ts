@@ -101,7 +101,23 @@ export interface ConfirmationStats {
   confirmations_with_location: number;
   recent_confirmations: number;
 }
+export interface ModelSettings {
+  available_models: {
+    all: string[];
+    leaf: string[];
+    fruit: string[];
+  };
+  active_models: {
+    leaf: string;
+    fruit: string;
+  };
+  models_dir: string;
+}
 
+export interface UpdateModelPayload {
+  leaf_model?:  string;
+  fruit_model?: string;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -599,6 +615,23 @@ export class MangoDiseaseService {
       catchError(error => {
         throw error;
       })
+    );
+  }
+
+  getModelSettings(): Observable<ApiResponse<ModelSettings>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<ModelSettings>>(
+      `${this.apiUrl}/model-settings/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  } 
+
+  updateModelSettings(payload: UpdateModelPayload): Observable<ApiResponse<any>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/model-settings/update/`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
   }
 }

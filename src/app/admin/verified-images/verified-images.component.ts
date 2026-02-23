@@ -821,7 +821,7 @@ export class VerifiedImagesComponent implements OnInit {
       return;
     }
 
-    const confirmMessage = `⚠️ WARNING: Are you sure you want to DELETE ${this.selectedImages.size} images?\n\nThis action CANNOT be undone!`;
+    const confirmMessage = `WARNING: Are you sure you want to DELETE ${this.selectedImages.size} images?\n\nThis action CANNOT be undone!`;
     if (!confirm(confirmMessage)) {
       return;
     }

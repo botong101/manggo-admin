@@ -21,7 +21,7 @@
                 (click)="updateVerificationStatus(true)"
                 [disabled]="updating"
                 class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400">
-          <span *ngIf="!updating">✓ Verify Image</span>
+          <span *ngIf="!updating">Verify Image</span>
           <span *ngIf="updating" class="flex items-center">
             <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -35,7 +35,7 @@
                 (click)="updateVerificationStatus(false)"
                 [disabled]="updating"
                 class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors disabled:bg-gray-400">
-          <span *ngIf="!updating">⚠ Unverify</span>
+          <span *ngIf="!updating">Unverify</span>
           <span *ngIf="updating" class="flex items-center">
             <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -48,7 +48,7 @@
         <button (click)="deleteImage()"
                 [disabled]="updating"
                 class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400">
-          🗑 Delete
+          Delete
         </button>
       </div>
     </div>
@@ -62,7 +62,7 @@
 
   <!-- Error State -->
   <div *ngIf="error && !loading" class="text-center py-12">
-    <div class="text-red-500 text-xl mb-4">⚠️</div>
+    <div class="text-red-500 text-xl mb-4"></div>
     <p class="text-gray-600 mb-4">{{ error }}</p>
     <button (click)="loadImageDetails()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
       Retry
