@@ -1,6 +1,15 @@
-# MangoSenseMasterUI
+# MangoSense Admin Dashboard
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.5.
+This is the administrative web interface for the MangoSense mango disease detection system. This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.5.
+
+## System Architecture
+
+This repository is part of the MangoSense ecosystem, which includes:
+- **manggo-backend**: Python-based API server providing disease detection and data management
+- **manggo-admin** (this repository): Angular-based administrative web interface
+- **manggo-mobile**: TypeScript-based mobile application for end-users
+
+For detailed architecture documentation, including system diagrams and component interactions, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Development server
 

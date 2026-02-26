@@ -1,0 +1,211 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, backgrounds, fit}
+
+\begin{document}
+
+\definecolor{backendcolor}{RGB}{76,175,80}
+\definecolor{admincolor}{RGB}{33,150,243}
+\definecolor{mobilecolor}{RGB}{255,152,0}
+\definecolor{arrowcolor}{RGB}{100,100,100}
+
+\tikzstyle{repository} = [
+    rectangle,
+    rounded corners,
+    minimum width=4cm,
+    minimum height=3cm,
+    text centered,
+    draw=black,
+    fill=white,
+    drop shadow,
+    font=\sffamily
+]
+
+\tikzstyle{header} = [
+    rectangle,
+    rounded corners=2mm,
+    text width=3.8cm,
+    minimum height=0.8cm,
+    text centered,
+    font=\sffamily\bfseries,
+    text=white
+]
+
+\tikzstyle{connection} = [
+    -{Stealth[length=3mm]},
+    thick,
+    color=arrowcolor
+]
+
+\tikzstyle{biconnection} = [
+    {Stealth[length=2mm]}-{Stealth[length=2mm]},
+    very thick,
+    color=arrowcolor
+]
+
+\begin{tikzpicture}[node distance=3cm, auto]
+
+% Title
+\node[font=\sffamily\Large\bfseries] at (0, 6) {MangoSense System Architecture};
+
+% Backend Repository (Central)
+\node (backend) [repository, minimum height=4.5cm] at (0, 0) {
+    \begin{minipage}{3.6cm}
+    \vspace{0.3cm}
+    \centering
+    
+    \textbf{\large manggo-backend}
+    
+    \vspace{0.2cm}
+    \hrule
+    \vspace{0.3cm}
+    
+    \begin{flushleft}
+    \small
+    \textbf{Repository:} \\
+    botong101/manggo-backend
+    
+    \vspace{0.1cm}
+    \textbf{Type:} Backend API Server
+    
+    \vspace{0.1cm}
+    \textbf{Language:} Python (98.7\%)
+    
+    \vspace{0.1cm}
+    \textbf{Role:} Central API Layer
+    
+    \vspace{0.2cm}
+    \textbf{Features:}
+    \begin{itemize}
+        \setlength\itemsep{-0.2em}
+        \item RESTful API endpoints
+        \item Disease detection ML models
+        \item Image processing
+        \item Data persistence
+        \item Authentication \& authorization
+    \end{itemize}
+    \end{flushleft}
+    \end{minipage}
+};
+
+\node[header, fill=backendcolor] at (backend.north) {};
+
+% Admin Repository (Left)
+\node (admin) [repository, minimum height=4.5cm, left=4cm of backend] {
+    \begin{minipage}{3.6cm}
+    \vspace{0.3cm}
+    \centering
+    
+    \textbf{\large manggo-admin}
+    
+    \vspace{0.2cm}
+    \hrule
+    \vspace{0.3cm}
+    
+    \begin{flushleft}
+    \small
+    \textbf{Repository:} \\
+    botong101/manggo-admin
+    
+    \vspace{0.1cm}
+    \textbf{Type:} Web Admin Interface
+    
+    \vspace{0.1cm}
+    \textbf{Languages:} \\
+    HTML (48.5\%), TypeScript (45\%)
+    
+    \vspace{0.1cm}
+    \textbf{Framework:} Angular 20
+    
+    \vspace{0.1cm}
+    \textbf{Role:} Administrative Dashboard
+    
+    \vspace{0.2cm}
+    \textbf{Features:}
+    \begin{itemize}
+        \setlength\itemsep{-0.2em}
+        \item Disease statistics dashboard
+        \item Image management
+        \item User management
+        \item Reports \& analytics
+        \item System configuration
+    \end{itemize}
+    \end{flushleft}
+    \end{minipage}
+};
+
+\node[header, fill=admincolor] at (admin.north) {};
+
+% Mobile Repository (Right)
+\node (mobile) [repository, minimum height=4.5cm, right=4cm of backend] {
+    \begin{minipage}{3.6cm}
+    \vspace{0.3cm}
+    \centering
+    
+    \textbf{\large manggo-mobile}
+    
+    \vspace{0.2cm}
+    \hrule
+    \vspace{0.3cm}
+    
+    \begin{flushleft}
+    \small
+    \textbf{Repository:} \\
+    botong101/manggo-mobile
+    
+    \vspace{0.1cm}
+    \textbf{Type:} Mobile Application
+    
+    \vspace{0.1cm}
+    \textbf{Languages:} \\
+    TypeScript (50.4\%), SCSS (30.2\%)
+    
+    \vspace{0.1cm}
+    \textbf{Role:} User-Facing Mobile App
+    
+    \vspace{0.2cm}
+    \textbf{Features:}
+    \begin{itemize}
+        \setlength\itemsep{-0.2em}
+        \item Image capture interface
+        \item Disease detection results
+        \item User authentication
+        \item History tracking
+        \item Offline capabilities
+    \end{itemize}
+    \end{flushleft}
+    \end{minipage}
+};
+
+\node[header, fill=mobilecolor] at (mobile.north) {};
+
+% Connections
+\draw [biconnection, color=admincolor] (admin.east) -- node[above, font=\small\sffamily] {REST API} node[below, font=\scriptsize\sffamily] {HTTP/HTTPS} (backend.west);
+
+\draw [biconnection, color=mobilecolor] (mobile.west) -- node[above, font=\small\sffamily] {REST API} node[below, font=\scriptsize\sffamily] {HTTP/HTTPS} (backend.east);
+
+% Legend
+\node[draw, rectangle, rounded corners, fill=white, drop shadow, font=\sffamily\small] at (0, -5.5) {
+    \begin{minipage}{10cm}
+    \centering
+    \textbf{Architecture Overview}
+    
+    \vspace{0.2cm}
+    \begin{flushleft}
+    \textbf{Backend:} Python-based API server providing centralized services for disease detection, \\
+    \hspace*{3em} image processing, and data management.
+    
+    \textbf{Admin:} Angular-based web application for administrators to manage the system, \\
+    \hspace*{3em} view analytics, and configure settings.
+    
+    \textbf{Mobile:} TypeScript-based mobile application for end-users to capture mango images \\
+    \hspace*{3em} and receive disease detection results.
+    
+    \textbf{Communication:} All components communicate via RESTful API over HTTP/HTTPS protocol.
+    \end{flushleft}
+    \end{minipage}
+};
+
+\end{tikzpicture}
+
+\end{document}
