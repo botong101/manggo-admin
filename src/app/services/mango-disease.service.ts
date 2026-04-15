@@ -101,6 +101,29 @@ export interface ConfirmationStats {
   confirmations_with_location: number;
   recent_confirmations: number;
 }
+export interface DiseaseLocation {
+  id: number;
+  disease: string;
+  latitude: number;
+  longitude: number;
+  address: string;
+  confidence: number;
+  uploaded_at: string;
+}
+
+export interface TrendPoint {
+  date: string;
+  total: number;
+  healthy: number;
+  diseased: number;
+}
+
+export interface TrendData {
+  daily_trends: TrendPoint[];
+  date_range: { start: string; end: string };
+  period_days: number;
+}
+
 export interface ModelSettings {
   available_models: {
     all: string[];
@@ -616,6 +639,20 @@ export class MangoDiseaseService {
         throw error;
       })
     );
+  }
+
+  getDiseaseLocations(): Observable<ApiResponse<{ locations: DiseaseLocation[] }>> {
+    return this.http.get<ApiResponse<{ locations: DiseaseLocation[] }>>(`${this.apiUrl}/disease-locations/all/`)
+      .pipe(
+        catchError(() => of({ success: false, data: { locations: [] } }))
+      );
+  }
+
+  getDiseaseTrends(days: number = 30): Observable<ApiResponse<TrendData>> {
+    return this.http.get<ApiResponse<TrendData>>(`${this.apiUrl}/disease-trends/?days=${days}`)
+      .pipe(
+        catchError(() => of({ success: false, data: { daily_trends: [], date_range: { start: '', end: '' }, period_days: days } }))
+      );
   }
 
   getModelSettings(): Observable<ApiResponse<ModelSettings>> {

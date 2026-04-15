@@ -11,6 +11,7 @@ import { VerifiedImagesComponent } from './verified-images/verified-images.compo
 import { UserConfirmationsComponent } from './user-confirmations/user-confirmations.component';
 import { VerifiedDiseasesComponent } from './verified-diseases/verified-diseases.component';
 import { UserManagementComponent } from './user-management/user-management.component';
+import { DiseaseMapComponent } from './disease-map/disease-map.component';
 
 @NgModule({
   declarations: [
@@ -21,7 +22,8 @@ import { UserManagementComponent } from './user-management/user-management.compo
     VerifiedImagesComponent,
     UserConfirmationsComponent,
     VerifiedDiseasesComponent,
-    UserManagementComponent
+    UserManagementComponent,
+    DiseaseMapComponent
   ],
   imports: [
     CommonModule,

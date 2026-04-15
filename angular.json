@@ -25,12 +25,14 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
               "src/styles.css"
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
               "file-saver",
-              "jszip"
+              "jszip",
+              "leaflet"
             ]
           },
           "configurations": {
@@ -97,6 +99,7 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
               "src/styles.css"
             ],
             "scripts": []

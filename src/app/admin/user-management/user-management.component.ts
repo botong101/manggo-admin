@@ -29,7 +29,21 @@ export class UserManagementComponent implements OnInit {
   userFolders: UserFolder[] = [];
   loading = true;
   error: string | null = null;
+  successMessage: string | null = null;
+  private successTimer: any;
   userStats: UserStats | null = null;
+
+  private showSuccess(msg: string) {
+    this.successMessage = msg;
+    this.error = null;
+    clearTimeout(this.successTimer);
+    this.successTimer = setTimeout(() => this.successMessage = null, 3500);
+  }
+
+  private showError(msg: string) {
+    this.error = msg;
+    this.successMessage = null;
+  }
   
   // Filters
   searchTerm = '';
@@ -282,13 +296,11 @@ export class UserManagementComponent implements OnInit {
         this.userStats!.inactive_users++;
       }
       
-      //show msg
       const statusText = user.is_active ? 'enabled' : 'disabled';
-      alert(`User "${this.getUserDisplayName(user)}" has been ${statusText} successfully.`);
-      
+      this.showSuccess(`User "${this.getUserDisplayName(user)}" has been ${statusText}.`);
+
     } catch (error) {
-      console.error('Error updating user status:', error);
-      alert('Failed to update user status. Please try again.');
+      this.showError('Failed to update user status. Please try again.');
     }
   }
 }

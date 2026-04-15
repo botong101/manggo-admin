@@ -72,6 +72,8 @@ export class ImageDetailComponent implements OnInit {
   showFullImage = false;
   updating = false;
   imageError = false;
+  successMessage: string | null = null;
+  private successTimer: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -128,19 +130,30 @@ export class ImageDetailComponent implements OnInit {
     this.showFullImage = !this.showFullImage;
   }
 
+  private showSuccess(msg: string) {
+    this.successMessage = msg;
+    this.error = null;
+    clearTimeout(this.successTimer);
+    this.successTimer = setTimeout(() => this.successMessage = null, 3500);
+  }
+
   async updateVerificationStatus(isVerified: boolean) {
     if (!this.imageData) return;
 
     try {
       this.updating = true;
+      this.error = null;
       const response = await firstValueFrom(this.mangoDiseaseService.updateImageVerification(this.imageData.id, isVerified));
-      
+
       if (response && response.success) {
         this.imageData.is_verified = isVerified;
         this.imageData.verified_date = isVerified ? new Date().toISOString() : null;
+        this.showSuccess(isVerified ? 'Image marked as verified.' : 'Verification removed.');
+      } else {
+        this.error = 'Could not update verification status. Please try again.';
       }
     } catch (error) {
-      console.error('Error updating verification:', error);
+      this.error = 'Could not update verification status. Please try again.';
     } finally {
       this.updating = false;
     }
@@ -152,13 +165,15 @@ export class ImageDetailComponent implements OnInit {
     if (confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
       try {
         this.updating = true;
+        this.error = null;
         const response = await firstValueFrom(this.mangoDiseaseService.deleteImage(this.imageData.id));
-        
+
         if (response && response.success) {
           this.location.back();
+        } else {
+          this.error = 'Failed to delete image. Please try again.';
         }
       } catch (error) {
-        console.error('Error deleting image:', error);
         this.error = 'Failed to delete image. Please try again.';
       } finally {
         this.updating = false;

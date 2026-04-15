@@ -35,6 +35,20 @@ export class VerifiedImagesComponent implements OnInit {
 
   downloadingAll = false;
   updatingSelected = false;
+  successMessage: string | null = null;
+  private successTimer: any;
+
+  private showSuccess(msg: string) {
+    this.successMessage = msg;
+    this.error = null;
+    clearTimeout(this.successTimer);
+    this.successTimer = setTimeout(() => this.successMessage = null, 3500);
+  }
+
+  private showError(msg: string) {
+    this.error = msg;
+    this.successMessage = null;
+  }
   
   //below 50 confidence = unknown
   private readonly UNKNOWN_CONFIDENCE_THRESHOLD = 50; 
@@ -648,8 +662,7 @@ export class VerifiedImagesComponent implements OnInit {
       const imageUrl = this.getImageUrl(image);
       await this.downloadService.downloadImageWithFetch(imageUrl, image.original_filename);
     } catch (error) {
-      console.error('Error downloading image:', error);
-      alert('Failed to download image. Please try again.');
+      this.showError('Failed to download image. Please try again.');
     }
   }
 
@@ -755,60 +768,50 @@ export class VerifiedImagesComponent implements OnInit {
   //verify button
   async verifySelectedImages(): Promise<void> {
     if (this.selectedImages.size === 0) {
-      alert('Please select images to verify');
+      this.showError('Please select at least one image to verify.');
       return;
     }
 
-    const confirmMessage = `Are you sure you want to verify ${this.selectedImages.size} images?`;
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    if (!confirm(`Verify ${this.selectedImages.size} selected image(s)?`)) return;
 
     this.updatingSelected = true;
-
     try {
       const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
       const result = await this.buttonsService.verifySelectedImages(selectedIds);
 
-      alert(result.message);
-
       if (result.success) {
         this.selectedImages = this.buttonsService.deselectAllImages();
         await this.loadAllImages();
+        this.showSuccess(result.message || `${selectedIds.length} image(s) verified successfully.`);
+      } else {
+        this.showError(result.message || 'Failed to verify images. Please try again.');
       }
-
     } finally {
       this.updatingSelected = false;
     }
   }
 
-
-
   //unverify button
   async unverifySelectedImages(): Promise<void> {
     if (this.selectedImages.size === 0) {
-      alert('Please select images to unverify');
+      this.showError('Please select at least one image to unverify.');
       return;
     }
 
-    const confirmMessage = `Are you sure you want to unverify ${this.selectedImages.size} images?`;
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    if (!confirm(`Remove verification from ${this.selectedImages.size} selected image(s)?`)) return;
 
     this.updatingSelected = true;
-
     try {
       const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
       const result = await this.buttonsService.unverifySelectedImages(selectedIds);
 
-      alert(result.message);
-
       if (result.success) {
         this.selectedImages = this.buttonsService.deselectAllImages();
         await this.loadAllImages();
+        this.showSuccess(result.message || `${selectedIds.length} image(s) unverified successfully.`);
+      } else {
+        this.showError(result.message || 'Failed to unverify images. Please try again.');
       }
-
     } finally {
       this.updatingSelected = false;
     }
@@ -817,33 +820,24 @@ export class VerifiedImagesComponent implements OnInit {
   //delete button
   async deleteSelectedImages(): Promise<void> {
     if (this.selectedImages.size === 0) {
-      alert('Please select images to delete');
+      this.showError('Please select at least one image to delete.');
       return;
     }
 
-    const confirmMessage = `WARNING: Are you sure you want to DELETE ${this.selectedImages.size} images?\n\nThis action CANNOT be undone!`;
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
-    const doubleConfirm = confirm('Are you ABSOLUTELY sure? This will permanently delete the images.');
-    if (!doubleConfirm) {
-      return;
-    }
+    if (!confirm(`Delete ${this.selectedImages.size} selected image(s)? This cannot be undone.`)) return;
 
     this.updatingSelected = true;
-
     try {
       const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
       const result = await this.buttonsService.deleteSelectedImages(selectedIds);
 
-      alert(result.message);
-
       if (result.success) {
         this.selectedImages = this.buttonsService.deselectAllImages();
         await this.loadAllImages();
+        this.showSuccess(result.message || `${selectedIds.length} image(s) deleted successfully.`);
+      } else {
+        this.showError(result.message || 'Failed to delete images. Please try again.');
       }
-
     } finally {
       this.updatingSelected = false;
     }

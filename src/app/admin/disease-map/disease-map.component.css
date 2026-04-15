@@ -1,0 +1,38 @@
+/* ── Leaflet popup styling ──────────────────────────────────────── */
+:host ::ng-deep .leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  padding: 0;
+}
+
+:host ::ng-deep .leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.5;
+}
+
+:host ::ng-deep .leaflet-popup-tip {
+  background: #ffffff;
+}
+
+:host ::ng-deep .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255,255,255,0.75);
+}
+
+:host ::ng-deep .leaflet-control-zoom a {
+  border-radius: 6px;
+}
+
+/* Smooth circle marker hover */
+:host ::ng-deep .leaflet-interactive {
+  transition: opacity 0.15s ease;
+}
+
+:host ::ng-deep .leaflet-interactive:hover {
+  opacity: 0.85;
+}
+
+/* Hide webkit scrollbar on filter bar */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
