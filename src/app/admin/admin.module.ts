@@ -17,7 +17,7 @@ import { DiseaseMapComponent } from './disease-map/disease-map.component';
   declarations: [
     DashboardComponent,
     ImageDetailComponent,
-    UploadImagesComponent,
+    // UploadImagesComponent,
     ModelSettingsComponent,
     VerifiedImagesComponent,
     UserConfirmationsComponent,

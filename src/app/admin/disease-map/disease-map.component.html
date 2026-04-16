@@ -1,11 +1,9 @@
 <div class="flex flex-col gap-0">
 
-  <!-- ── Filter bar ───────────────────────────────────────────────── -->
   <div *ngIf="!loading && totalLocations > 0"
        class="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-100 overflow-x-auto"
        style="scrollbar-width:none">
 
-    <!-- All -->
     <button (click)="setFilter('all')"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-all duration-150"
             [ngClass]="activeFilter === 'all'
@@ -16,7 +14,6 @@
       <span class="opacity-60 font-normal">{{ totalLocations }}</span>
     </button>
 
-    <!-- Per-disease -->
     <button *ngFor="let d of uniqueDiseases"
             (click)="setFilter(d)"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-all duration-150"
@@ -32,17 +29,14 @@
     </button>
   </div>
 
-  <!-- ── Map area ──────────────────────────────────────────────────── -->
   <div class="relative" style="height:420px">
 
-    <!-- Loading -->
     <div *ngIf="loading"
          class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-50">
       <div class="w-10 h-10 rounded-full border-4 border-gray-200 border-t-indigo-500 animate-spin mb-3"></div>
       <p class="text-sm font-medium text-gray-500">Loading disease locations…</p>
     </div>
 
-    <!-- No data -->
     <div *ngIf="!loading && totalLocations === 0"
          class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-50">
       <div class="bg-gray-100 rounded-full w-14 h-14 flex items-center justify-center mb-3">
@@ -56,10 +50,8 @@
       <p class="text-xs text-gray-400 mt-1">Locations appear once users share GPS when scanning</p>
     </div>
 
-    <!-- Leaflet map canvas -->
     <div #mapEl style="width:100%;height:100%;z-index:1"></div>
 
-    <!-- Legend (bottom-right overlay) -->
     <div *ngIf="!loading && totalLocations > 0"
          class="absolute bottom-4 right-3 z-10 bg-white rounded-xl shadow-lg border border-gray-100 p-3"
          style="min-width:148px;max-width:190px;max-height:260px;overflow-y:auto">

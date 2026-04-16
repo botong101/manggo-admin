@@ -1,12 +1,9 @@
 <div class="p-6 max-w-3xl mx-auto">
 
-  <!-- Header -->
   <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Model Settings</h1>
-    
   </div>
 
-  <!-- Loading state -->
   <div *ngIf="isLoading" class="flex items-center gap-2 text-gray-500 py-10 justify-center">
     <svg class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -15,7 +12,6 @@
     Loading model settings…
   </div>
 
-  <!-- Error banner -->
   <div *ngIf="errorMsg && !isLoading"
        class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 flex items-center gap-2">
     <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -24,7 +20,6 @@
     {{ errorMsg }}
   </div>
 
-  <!-- Success banner -->
   <div *ngIf="successMsg"
        class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
     <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -33,13 +28,10 @@
     {{ successMsg }}
   </div>
 
-  <!-- Settings cards -->
   <div *ngIf="settings && !isLoading" class="space-y-4">
 
-    <!-- Leaf Model Card -->
     <div class="settings-card bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <div class="flex items-start gap-4">
-        
         <div class="flex-1">
           <h2 class="text-base font-semibold text-gray-800">Leaf Disease Model</h2>
           <p class="text-xs text-gray-500 mb-3">Used when <code>detection_type = leaf</code></p>
@@ -62,7 +54,6 @@
       </div>
     </div>
 
-    <!-- Fruit Model Card -->
     <div class="settings-card bg-white rounded-xl border border-gray-200 shadow-sm p-5">
       <div class="flex items-start gap-4">
         <div class="flex-1">
@@ -87,7 +78,6 @@
       </div>
     </div>
 
-    <!-- Info box: models directory -->
     <div class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs text-gray-500">
       <span class="font-medium">Models directory:</span>
       <code class="ml-1 text-gray-700">{{ settings.models_dir }}</code>
@@ -95,7 +85,6 @@
       <span class="ml-2">{{ settings.available_models.all.length }} file(s) found</span>
     </div>
 
-    <!-- Save button -->
     <div class="flex justify-end pt-2">
       <button
         (click)="saveSettings()"
@@ -112,4 +101,251 @@
     </div>
 
   </div>
+
+
+  <div class="mt-10">
+    <div class="mb-4 border-t border-gray-200 pt-6">
+      <h2 class="text-xl font-bold text-gray-800">Retrain Model</h2>
+      <p class="text-sm text-gray-500 mt-1">
+        Fine-tune the active model using verified images from the database.
+        Images are preprocessed and split into train/val sets automatically.
+      </p>
+    </div>
+
+    <div *ngIf="retrainErrorMsg"
+         class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 flex items-center gap-2">
+      <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+      </svg>
+      {{ retrainErrorMsg }}
+    </div>
+
+    <div *ngIf="retrainSuccessMsg && !isRetraining"
+         class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 flex items-center gap-2">
+      <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      {{ retrainSuccessMsg }}
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Model Type to Retrain</label>
+        <div class="flex gap-3">
+          <button
+            (click)="retrainModelType = 'leaf'; onRetrainModelTypeChange()"
+            [class.bg-green-600]="retrainModelType === 'leaf'"
+            [class.text-white]="retrainModelType === 'leaf'"
+            [class.bg-gray-100]="retrainModelType !== 'leaf'"
+            [class.text-gray-700]="retrainModelType !== 'leaf'"
+            [disabled]="isRetraining"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Leaf
+          </button>
+          <button
+            (click)="retrainModelType = 'fruit'; onRetrainModelTypeChange()"
+            [class.bg-yellow-500]="retrainModelType === 'fruit'"
+            [class.text-white]="retrainModelType === 'fruit'"
+            [class.bg-gray-100]="retrainModelType !== 'fruit'"
+            [class.text-gray-700]="retrainModelType !== 'fruit'"
+            [disabled]="isRetraining"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Fruit
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <button
+          (click)="loadDatasetInfo()"
+          [disabled]="isLoadingDataset || isRetraining"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+                 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors
+                 disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg *ngIf="isLoadingDataset" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <svg *ngIf="!isLoadingDataset" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+          </svg>
+          {{ isLoadingDataset ? 'Checking…' : 'Check Dataset' }}
+        </button>
+      </div>
+
+      <div *ngIf="datasetInfo">
+
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-sm text-gray-600">
+            <span class="font-semibold">{{ datasetInfo.total_eligible_images }}</span>
+            eligible image(s) across
+            <span class="font-semibold">{{ eligibleClassEntries.length }}</span>
+            class(es)
+          </span>
+
+          <span *ngIf="datasetInfo.can_retrain"
+                class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2.5 py-0.5">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            Ready to retrain
+          </span>
+          <span *ngIf="!datasetInfo.can_retrain"
+                class="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 rounded-full px-2.5 py-0.5">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+            Not enough data
+          </span>
+        </div>
+
+        <div *ngIf="eligibleClassEntries.length > 0" class="mb-3">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+            Eligible classes (≥ {{ datasetInfo.min_images_per_class }} images)
+          </p>
+          <div class="rounded-lg border border-gray-200 overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                <tr>
+                  <th class="px-3 py-2 text-left font-medium">Class</th>
+                  <th class="px-3 py-2 text-right font-medium">Verified Images</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let cls of eligibleClassEntries" class="hover:bg-gray-50">
+                  <td class="px-3 py-2 text-gray-800 font-medium">{{ cls.name }}</td>
+                  <td class="px-3 py-2 text-right text-gray-600">{{ cls.count }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="ineligibleClassEntries.length > 0">
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+            Skipped classes (fewer than {{ datasetInfo.min_images_per_class }} images)
+          </p>
+          <div class="rounded-lg border border-orange-100 bg-orange-50 overflow-hidden">
+            <table class="w-full text-sm">
+              <tbody class="divide-y divide-orange-100">
+                <tr *ngFor="let cls of ineligibleClassEntries">
+                  <td class="px-3 py-2 text-orange-700">{{ cls.name }}</td>
+                  <td class="px-3 py-2 text-right text-orange-600">{{ cls.count }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">
+            Verify more images for these classes to include them in retraining.
+          </p>
+        </div>
+
+        <!-- Cannot retrain reason -->
+        <p *ngIf="!datasetInfo.can_retrain && datasetInfo.reason"
+           class="text-sm text-red-600 mt-2">{{ datasetInfo.reason }}</p>
+      </div>
+
+      <!-- Start Retraining button -->
+      <div class="flex justify-end pt-2 border-t border-gray-100">
+        <button
+          (click)="startRetraining()"
+          [disabled]="isRetraining || !datasetInfo?.can_retrain"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
+                 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800
+                 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <svg *ngIf="isRetraining" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <svg *ngIf="!isRetraining" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {{ isRetraining ? 'Retraining…' : 'Start Retraining' }}
+        </button>
+      </div>
+
+    </div><!-- /config card -->
+
+    <div *ngIf="retrainStatus && (retrainStatus.is_running || retrainStatus.phase === 'done' || retrainStatus.phase === 'error')"
+         class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg *ngIf="retrainStatus.is_running" class="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <svg *ngIf="retrainStatus.phase === 'done'" class="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          <svg *ngIf="retrainStatus.phase === 'error'" class="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <span class="text-sm font-semibold text-gray-700">
+            {{ retrainStatus.model_type | titlecase }} Model Retraining
+          </span>
+        </div>
+        <span class="text-xs text-gray-400">{{ phaseLabel }}</span>
+      </div>
+
+      <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+        <div
+          class="h-2.5 rounded-full transition-all duration-500"
+          [class.bg-blue-500]="retrainStatus.is_running"
+          [class.bg-green-500]="retrainStatus.phase === 'done'"
+          [class.bg-red-500]="retrainStatus.phase === 'error'"
+          [style.width]="progressBarWidth">
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-500 italic">{{ retrainStatus.message }}</p>
+
+      <div *ngIf="retrainStatus.dataset_info" class="text-xs text-gray-500 space-y-1">
+        <p class="font-medium text-gray-600">Dataset split:</p>
+        <div *ngFor="let entry of retrainStatus.dataset_info | keyvalue"
+             class="flex gap-4 ml-2">
+          <span class="font-medium text-gray-700 w-32">{{ entry.key }}</span>
+          <span>train: {{ entry.value.train }}</span>
+          <span>val: {{ entry.value.val }}</span>
+          <span class="text-gray-400">(total: {{ entry.value.total }})</span>
+        </div>
+      </div>
+
+      <div *ngIf="retrainStatus.phase === 'done'"
+           class="rounded-lg bg-green-50 border border-green-200 p-4 space-y-2">
+        <p class="text-sm font-semibold text-green-800">Training complete</p>
+        <div class="text-sm text-green-700 space-y-1">
+          <p>Validation accuracy: <span class="font-bold">{{ retrainStatus.accuracy }}%</span></p>
+          <p>Output file: <code class="font-mono text-xs bg-green-100 px-1 rounded">{{ retrainStatus.output_filename }}</code></p>
+        </div>
+        <button
+          (click)="activateRetrainedModel()"
+          class="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+                 bg-green-600 text-white hover:bg-green-700 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5 13l4 4L19 7" />
+          </svg>
+          Activate this model
+        </button>
+      </div>
+
+      <div *ngIf="retrainStatus.phase === 'error'"
+           class="rounded-lg bg-red-50 border border-red-200 p-4">
+        <p class="text-sm font-semibold text-red-800 mb-1">Retraining failed</p>
+        <p class="text-xs text-red-600 font-mono">{{ retrainStatus.error }}</p>
+      </div>
+
+      <div class="text-xs text-gray-400 flex gap-4">
+        <span *ngIf="retrainStatus.started_at">Started: {{ retrainStatus.started_at | date:'medium' }}</span>
+        <span *ngIf="retrainStatus.finished_at">Finished: {{ retrainStatus.finished_at | date:'medium' }}</span>
+      </div>
+
+    </div><!-- /progress card -->
+
+  </div><!-- /retrain section -->
+
 </div>

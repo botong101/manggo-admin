@@ -141,6 +141,30 @@ export interface UpdateModelPayload {
   leaf_model?:  string;
   fruit_model?: string;
 }
+
+export interface RetrainDatasetInfo {
+  model_type:            string;
+  all_classes:           { [cls: string]: number };
+  eligible_classes:      { [cls: string]: number };
+  total_eligible_images: number;
+  min_images_per_class:  number;
+  can_retrain:           boolean;
+  reason:                string | null;
+}
+
+export interface RetrainStatus {
+  is_running:      boolean;
+  model_type:      string | null;
+  phase:           'starting' | 'preparing' | 'training' | 'evaluating' | 'saving' | 'done' | 'error' | null;
+  progress:        number;
+  message:         string;
+  started_at:      string | null;
+  finished_at:     string | null;
+  output_filename: string | null;
+  accuracy:        number | null;
+  error:           string | null;
+  dataset_info:    { [cls: string]: { total: number; train: number; val: number } } | null;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -668,6 +692,31 @@ export class MangoDiseaseService {
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/model-settings/update/`,
       payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  getRetrainDatasetInfo(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<RetrainDatasetInfo>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<RetrainDatasetInfo>>(
+      `${this.apiUrl}/retrain/dataset-info/?model_type=${modelType}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  triggerRetrain(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<any>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/retrain/`,
+      { model_type: modelType },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  getRetrainStatus(): Observable<ApiResponse<RetrainStatus>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<RetrainStatus>>(
+      `${this.apiUrl}/retrain/status/`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }

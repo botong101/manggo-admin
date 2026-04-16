@@ -6,7 +6,6 @@ import { firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
 import { MangoDiseaseService, DiseaseLocation } from '../../services/mango-disease.service';
 
-// Fix Leaflet's broken default icon paths in webpack builds
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'assets/leaflet/marker-icon-2x.png',
@@ -14,7 +13,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'assets/leaflet/marker-shadow.png',
 });
 
-// 12-color palette for diseases (healthy always gets green)
 const PALETTE = [
   '#ef4444', // red
   '#f97316', // orange
@@ -64,7 +62,6 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.map?.remove();
   }
 
-  // ── Map init ────────────────────────────────────────────────────────
 
   private initMap() {
     this.map = L.map(this.mapEl.nativeElement, {
@@ -81,11 +78,9 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.markerLayer.addTo(this.map);
 
-    // Force Leaflet to recalculate size after the DOM has fully settled
     setTimeout(() => this.map?.invalidateSize(), 150);
   }
 
-  // ── Data ─────────────────────────────────────────────────────────────
 
   async fetchLocations() {
     try {
@@ -93,7 +88,6 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.locations     = resp?.data?.locations ?? [];
       this.totalLocations = this.locations.length;
 
-      // Deterministic color per disease — healthy is always green
       const diseases = [...new Set(this.locations.map(l => l.disease))].sort();
       this.uniqueDiseases = diseases;
       let idx = 0;
@@ -112,7 +106,6 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // ── Rendering ─────────────────────────────────────────────────────────
 
   renderMarkers() {
     if (!this.map) return;
@@ -157,7 +150,6 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.markerLayer.addLayer(marker);
     });
 
-    // Fit bounds to visible markers
     if (visible.length > 0) {
       const bounds = L.latLngBounds(
         visible.map(l => [l.latitude, l.longitude] as L.LatLngTuple)
@@ -166,14 +158,12 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // ── Filter ────────────────────────────────────────────────────────────
 
   setFilter(disease: string) {
     this.activeFilter = disease;
     this.renderMarkers();
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────
 
   getColor(disease: string): string {
     return this.diseaseColors.get(disease) ?? '#6b7280';

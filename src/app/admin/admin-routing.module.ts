@@ -16,7 +16,7 @@ const routes: Routes = [
   { path: 'image-detail/:id', component: ImageDetailComponent },
   { path: 'verified-images', component: VerifiedImagesComponent },
   { path: 'user-management', component: UserManagementComponent },
-  { path: 'upload-images', component: UploadImagesComponent },
+  // { path: 'upload-images', component: UploadImagesComponent },
   { path: 'model-settings', component: ModelSettingsComponent },
   { path: 'user-confirmations', component: UserConfirmationsComponent },
 ];
