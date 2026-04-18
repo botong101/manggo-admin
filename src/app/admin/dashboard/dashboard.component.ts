@@ -79,6 +79,10 @@ export class DashboardComponent implements OnInit {
   avgTotal     = 0;
   avgHealthy   = 0;
   avgDiseased  = 0;
+  totalTrendCount   = 0;
+  healthyTrendCount = 0;
+  diseasedTrendCount = 0;
+  healthRate        = 0;
   peakLabel    = '';
 
   yAxisLabels: { y: number; val: number }[] = [];
@@ -103,7 +107,7 @@ export class DashboardComponent implements OnInit {
 
       const [stats, imagesResp, trendsResp] = await Promise.all([
         firstValueFrom(this.mangoDiseaseService.getDiseaseStatistics()),
-        firstValueFrom(this.mangoDiseaseService.getClassifiedImages()),
+        firstValueFrom(this.mangoDiseaseService.getClassifiedImages({ page: 1, page_size: 1000 })),
         firstValueFrom(this.mangoDiseaseService.getDiseaseTrends(this.trendPeriod))
       ]);
 
@@ -120,6 +124,8 @@ export class DashboardComponent implements OnInit {
 
       if (trendsResp?.success && trendsResp.data?.daily_trends?.length) {
         this.buildTrendChart(trendsResp.data.daily_trends);
+      } else if (this.recentImages.length) {
+        this.buildTrendChartFromImages(this.recentImages, this.trendPeriod);
       }
 
       this.loading = false;
@@ -243,9 +249,14 @@ export class DashboardComponent implements OnInit {
     this.trendMaxVal  = Math.max(...allVals, 1);
 
     const n          = this.chartPoints.length;
-    this.avgTotal    = Math.round(this.chartPoints.reduce((s, p) => s + p.total, 0) / n);
-    this.avgHealthy  = Math.round(this.chartPoints.reduce((s, p) => s + p.healthy, 0) / n);
-    this.avgDiseased = Math.round(this.chartPoints.reduce((s, p) => s + p.diseased, 0) / n);
+    this.totalTrendCount   = this.chartPoints.reduce((s, p) => s + p.total, 0);
+    this.healthyTrendCount = this.chartPoints.reduce((s, p) => s + p.healthy, 0);
+    this.diseasedTrendCount = this.chartPoints.reduce((s, p) => s + p.diseased, 0);
+
+    this.avgTotal    = this.totalTrendCount / n;
+    this.avgHealthy  = this.healthyTrendCount / n;
+    this.avgDiseased = this.diseasedTrendCount / n;
+    this.healthRate  = this.totalTrendCount > 0 ? (this.healthyTrendCount / this.totalTrendCount) * 100 : 0;
 
     const peak   = this.chartPoints.reduce((m, p) => p.total > m.total ? p : m, this.chartPoints[0]);
     this.peakLabel = peak.label;
@@ -270,6 +281,55 @@ export class DashboardComponent implements OnInit {
       x:     this.ptX(i, n),
       label: this.chartPoints[i].label
     }));
+  }
+
+  private buildTrendChartFromImages(images: MangoImage[], days: number) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    cutoff.setHours(0, 0, 0, 0);
+
+    const trendMap = new Map<string, TrendPoint>();
+
+    for (const image of images) {
+      const uploadedAt = new Date(image.uploaded_at);
+      if (isNaN(uploadedAt.getTime()) || uploadedAt < cutoff) {
+        continue;
+      }
+
+      const dateKey = uploadedAt.toISOString().slice(0, 10);
+      const existing = trendMap.get(dateKey) ?? {
+        date: dateKey,
+        total: 0,
+        healthy: 0,
+        diseased: 0
+      };
+
+      existing.total += 1;
+      if ((image.predicted_class || '').toLowerCase().includes('healthy')) {
+        existing.healthy += 1;
+      } else {
+        existing.diseased += 1;
+      }
+
+      trendMap.set(dateKey, existing);
+    }
+
+    const fallbackTrends: TrendPoint[] = [];
+    for (let i = 0; i < days; i++) {
+      const current = new Date();
+      current.setDate(current.getDate() - (days - 1 - i));
+      const dateKey = current.toISOString().slice(0, 10);
+      fallbackTrends.push(trendMap.get(dateKey) ?? {
+        date: dateKey,
+        total: 0,
+        healthy: 0,
+        diseased: 0
+      });
+    }
+
+    if (fallbackTrends.some(point => point.total > 0)) {
+      this.buildTrendChart(fallbackTrends);
+    }
   }
 
   /** Convert a data value + index to SVG polyline points string */

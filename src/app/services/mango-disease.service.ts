@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, catchError, map, tap } from 'rxjs';
+import { Observable, of, throwError, catchError, map, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 export interface ApiResponse<T> {
   success: boolean;
@@ -184,20 +184,8 @@ export class MangoDiseaseService {
           throw new Error('Invalid API response format');
         }),
         catchError(error => {
-          return of({
-            total_images: 0,
-            healthy_images: 0,
-            diseased_images: 0,
-            leaf_images: 0,
-            fruit_images: 0,
-            diseases_breakdown: {},
-            recent_uploads: 0,
-            monthly_uploads: 0,
-            verification_stats: {
-              verified: 0,
-              unverified: 0
-            }
-          });
+          console.error('Error fetching dashboard statistics:', error);
+          return throwError(() => error);
         })
       );
   }
@@ -243,6 +231,7 @@ export class MangoDiseaseService {
               id: image.id,
               user: image.user,
               image: image.image,
+              image_url: image.image_url,
               original_filename: image.original_filename,
               uploaded_at: image.uploaded_at,
               predicted_class: image.predicted_class,
@@ -282,12 +271,8 @@ export class MangoDiseaseService {
           };
         }),
         catchError(error => {
-          //something went wrong
           console.error('Error fetching classified images:', error);
-          
-          return of({
-            images: [],
-          });
+          return throwError(() => error);
         })
       );
   }
@@ -673,9 +658,16 @@ export class MangoDiseaseService {
   }
 
   getDiseaseTrends(days: number = 30): Observable<ApiResponse<TrendData>> {
-    return this.http.get<ApiResponse<TrendData>>(`${this.apiUrl}/disease-trends/?days=${days}`)
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<TrendData>>(
+      `${this.apiUrl}/disease-trends/?days=${days}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    )
       .pipe(
-        catchError(() => of({ success: false, data: { daily_trends: [], date_range: { start: '', end: '' }, period_days: days } }))
+        catchError(error => {
+          console.error('Error fetching disease trends:', error);
+          return throwError(() => error);
+        })
       );
   }
 

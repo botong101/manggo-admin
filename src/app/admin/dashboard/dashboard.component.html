@@ -288,20 +288,20 @@
           <!-- summary stats -->
           <div *ngIf="hasTrendData" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
             <div class="bg-blue-50 rounded-xl p-3 text-center">
-              <div class="text-xl font-bold text-blue-700">{{ avgTotal }}</div>
+              <div class="text-xl font-bold text-blue-700">{{ avgTotal | number:'1.1-1' }}</div>
               <div class="text-xs text-blue-600 mt-0.5">Avg Daily Total</div>
             </div>
             <div class="bg-green-50 rounded-xl p-3 text-center">
-              <div class="text-xl font-bold text-green-700">{{ avgHealthy }}</div>
+              <div class="text-xl font-bold text-green-700">{{ avgHealthy | number:'1.1-1' }}</div>
               <div class="text-xs text-green-600 mt-0.5">Avg Daily Healthy</div>
             </div>
             <div class="bg-red-50 rounded-xl p-3 text-center">
-              <div class="text-xl font-bold text-red-700">{{ avgDiseased }}</div>
+              <div class="text-xl font-bold text-red-700">{{ avgDiseased | number:'1.1-1' }}</div>
               <div class="text-xs text-red-600 mt-0.5">Avg Daily Diseased</div>
             </div>
             <div class="bg-purple-50 rounded-xl p-3 text-center">
               <div class="text-xl font-bold text-purple-700">
-                {{ avgTotal > 0 ? ((avgHealthy / avgTotal) * 100).toFixed(0) : 0 }}%
+                {{ healthRate | number:'1.0-1' }}%
               </div>
               <div class="text-xs text-purple-600 mt-0.5">Avg Health Rate</div>
             </div>
@@ -332,6 +332,74 @@
 
         </div>
       </div>
+    </div>
+
+    <!-- ── Recent Image Data ───────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">Recent Image Data</h2>
+          <p class="text-sm text-gray-500">Latest records fetched from the database</p>
+        </div>
+        <div class="text-sm text-gray-500">
+          Showing {{ recentImages.length }} record{{ recentImages.length === 1 ? '' : 's' }}
+        </div>
+      </div>
+
+      <div *ngIf="recentImages.length > 0; else noImages" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div *ngFor="let image of recentImages.slice(0, 12)" class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 hover:shadow-md transition-shadow duration-200">
+            <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
+              <img
+                [src]="image.image_url || image.image"
+                [alt]="image.original_filename"
+                class="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+
+            <div class="p-4 space-y-3">
+              <div>
+                <p class="text-sm font-semibold text-gray-900 truncate" [title]="image.original_filename">
+                  {{ image.original_filename }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  {{ image.uploaded_at | date:'medium' }}
+                </p>
+              </div>
+
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Prediction</p>
+                  <p class="text-sm font-medium text-gray-800">{{ image.predicted_class || 'Unknown' }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Confidence</p>
+                  <p class="text-sm font-medium text-gray-800">
+                    {{ image.confidence_score !== null && image.confidence_score !== undefined ? (image.confidence_score | number:'1.0-2') : 'N/A' }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-xs">
+                <span class="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  {{ image.disease_type || 'unknown' }}
+                </span>
+                <span class="px-2 py-1 rounded-full" [ngClass]="image.is_verified ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-yellow-50 text-yellow-700 border border-yellow-100'">
+                  {{ image.is_verified ? 'Verified' : 'Unverified' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noImages>
+        <div class="p-10 text-center text-gray-500">
+          <p class="font-medium">No image records found</p>
+          <p class="text-sm mt-1">Once the database has classified images, they will appear here.</p>
+        </div>
+      </ng-template>
     </div>
 
   </div>
