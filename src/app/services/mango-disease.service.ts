@@ -47,6 +47,9 @@ export interface MangoImage {
   location_accuracy_confirmed?: boolean; 
   location_address?: string;
   location_source?: string;
+
+  training_ready: boolean;
+  training_notes: string; 
 }
 
 export interface DiseaseStats {
@@ -260,7 +263,10 @@ export class MangoDiseaseService {
               location_consent_given: image.location_consent_given,
               location_accuracy_confirmed: image.location_accuracy_confirmed,
               location_address: image.location_address,
-              location_source: image.location_source
+              location_source: image.location_source,
+
+              training_ready: image.training_ready || false,
+              training_notes: image.training_notes || ''
             };
             
             //add to list

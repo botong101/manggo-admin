@@ -7,6 +7,7 @@ import { ModelSettingsComponent } from './model-settings/model-settings.componen
 import { VerifiedImagesComponent } from './verified-images/verified-images.component';
 import { UserConfirmationsComponent } from './user-confirmations/user-confirmations.component';
 import { UserManagementComponent } from './user-management/user-management.component';
+import { TrainingSummaryComponent } from './training-data/training-summary.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -19,6 +20,7 @@ const routes: Routes = [
   // { path: 'upload-images', component: UploadImagesComponent },
   { path: 'model-settings', component: ModelSettingsComponent },
   { path: 'user-confirmations', component: UserConfirmationsComponent },
+  { path: 'training-data', component: TrainingSummaryComponent }
 ];
 
 @NgModule({

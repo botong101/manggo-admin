@@ -12,6 +12,8 @@ import { UserConfirmationsComponent } from './user-confirmations/user-confirmati
 import { VerifiedDiseasesComponent } from './verified-diseases/verified-diseases.component';
 import { UserManagementComponent } from './user-management/user-management.component';
 import { DiseaseMapComponent } from './disease-map/disease-map.component';
+import { TrainingEditModalComponent } from './training-data/training-edit-modal/training-edit-modal.component';
+import { TrainingSummaryComponent } from './training-data/training-summary.component';
 
 @NgModule({
   declarations: [
@@ -28,8 +30,10 @@ import { DiseaseMapComponent } from './disease-map/disease-map.component';
   imports: [
     CommonModule,
     FormsModule,
-    RouterModule, //needed for routing
-    AdminRoutingModule
+    RouterModule, 
+    AdminRoutingModule,
+    TrainingEditModalComponent,
+    TrainingSummaryComponent
   ]
 })
 export class AdminModule { }

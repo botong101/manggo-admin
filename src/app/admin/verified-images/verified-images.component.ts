@@ -7,9 +7,11 @@ import { AuthService } from '../../services/auth.service';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { VerifiedDiseaseFolder, MainFolder } from './images.interfaces';
-import { FilterService} from './Filter.service';
+import { FilterService } from './Filter.service';
 import { environment } from '../../../environments/environment';
 import { ButtonsService } from './buttons.service';
+import { TrainingDataService } from '../../services/training-data.service';
+import { TrainingDataState } from '../../services/training-data.state';
 
 
 @Component({
@@ -32,6 +34,7 @@ export class VerifiedImagesComponent implements OnInit {
   totalAllCount = 0;
 
   selectedImages: Set<number> = new Set();
+  selectedTrainingImageId: number | null = null;
 
   downloadingAll = false;
   updatingSelected = false;
@@ -66,6 +69,8 @@ export class VerifiedImagesComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
     private filterService: FilterService,
+    private trainingDataService: TrainingDataService,
+    private trainingDataState: TrainingDataState,
     private buttonsService: ButtonsService
   ) {}
 
@@ -843,7 +848,72 @@ export class VerifiedImagesComponent implements OnInit {
     }
   }
 
+  /** Bulk-approves all currently selected images for XGBoost training ingestion. */
+  approveSelectedForTraining(): void {
+    const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
+    
+    if (selectedIds.length === 0) {
+      this.showError('No images selected.');
+      return;
+    }
 
+    this.trainingDataService.bulkApprove({
+      image_ids: selectedIds,
+      training_ready: true,
+    }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          // Optimistically update badge state on each affected image
+          selectedIds.forEach(id => {
+            const img = this.findImageById(id);
+            if (img) img.training_ready = true;
+          });
+          
+          this.trainingDataState.incrementReadyCount(res.updated_count);
+          this.showSuccess(`${res.updated_count} image(s) approved for training.`);
+          
+          // Optional: clear selection after successful approval
+          this.selectedImages = this.buttonsService.deselectAllImages();
+        }
+      },
+      error: () => {
+        this.showError('Failed to approve images. Please try again.');
+      },
+    });
+  }
+
+  /** Helper method to find an image object by its ID to update its training badge */
+  private findImageById(id: number) { // Removed strict return type so it adapts to your setup
+    for (const folder of this.mainFolders) {
+      for (const sub of folder.subFolders ?? []) {
+        const found = sub.images.find((img: any) => img.id === id);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
+
+  /** Opens the training edit modal for a specific image */
+  openTrainingEditModal(imageId: number): void {
+    this.selectedTrainingImageId = imageId;
+  }
+
+  /** Clears the selected ID, causing the modal to close */
+  onTrainingModalClosed(): void {
+    this.selectedTrainingImageId = null;
+  }
+
+  /** Handles the save event emitted by the modal */
+  onTrainingModalSaved(event: { id: number; training_ready: boolean }): void {
+    const img = this.findImageById(event.id);
+    
+    if (img) {
+      img.training_ready = event.training_ready;
+    }
+    
+    this.selectedTrainingImageId = null; // Close the modal
+    this.showSuccess('Training data saved.'); // Using your existing success notification!
+  }
 
   viewImageDetails(imageId: number) {
     this.router.navigate(['/admin/image-detail', imageId]);
@@ -857,4 +927,13 @@ export class VerifiedImagesComponent implements OnInit {
   hasSelectedImages(): boolean {
     return this.buttonsService.hasSelectedImages(this.selectedImages);
   }
+  getTrainingBadgeClass(image: MangoImage): string {
+    return image.training_ready
+      ? 'bg-green-100 text-green-800 border border-green-300'
+      : 'bg-gray-100 text-gray-500 border border-gray-200';
+  }
+  getTrainingBadgeLabel(image: MangoImage): string {
+    return image.training_ready ? 'Training Ready' : 'Not Approved';
+  }
+
 }
