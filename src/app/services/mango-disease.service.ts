@@ -8,6 +8,11 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface Symptom {
+  key: string;
+  label: string;
+}
+
 export interface MangoImage {
   id: number;
   user: {
@@ -19,37 +24,45 @@ export interface MangoImage {
     date_joined: string;
   };
   image: string;
-  image_url?: string; 
+  image_url?: string;
   original_filename: string;
   uploaded_at: string;
-  upload_date?: string; 
+  upload_date?: string;
   predicted_class: string;
-  disease_classification?: string; 
+  disease_classification?: string;
   confidence_score: number;
   disease_type: 'leaf' | 'fruit' | 'unknown';
-  model_used?: 'leaf' | 'fruit'; 
-  model_path?: string; 
+  model_used?: 'leaf' | 'fruit';
+  model_path?: string;
   image_size: string;
   processing_time: number;
   client_ip: string;
-  is_verified?: boolean; 
-  verified_date?: string | null; 
-  notes?: string; 
-  user_feedback?: string; 
-  user_confirmed_correct?: boolean | null; 
-  hasError?: boolean; 
+  is_verified?: boolean;
+  verified_date?: string | null;
+  notes?: string;
+  user_feedback?: string;
+  user_confirmed_correct?: boolean | null;
+  hasError?: boolean;
 
-  //gps stuff 
+  //gps stuff
   latitude?: number;
   longitude?: number;
   location_accuracy?: number;
   location_consent_given?: boolean;
-  location_accuracy_confirmed?: boolean; 
+  location_accuracy_confirmed?: boolean;
   location_address?: string;
   location_source?: string;
 
   training_ready: boolean;
-  training_notes: string; 
+  training_notes: string;
+
+  // symptoms (stored as {key, label} objects)
+  selected_symptoms?: Symptom[] | null;
+  primary_symptoms?: Symptom[] | null;
+  alternative_symptoms?: Symptom[] | null;
+  detected_disease?: string;
+  top_diseases?: any;
+  symptoms_data?: any;
 }
 
 export interface DiseaseStats {

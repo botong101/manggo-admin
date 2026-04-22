@@ -5,6 +5,7 @@ import { TrainingDataService } from '../../../services/training-data.service';
 import {
   TrainingDataDetail,
   TrainingDataPatchRequest,
+  TrainingSymptom,
 } from '../../../services/training-data.interfaces';
 
 @Component({
@@ -93,10 +94,17 @@ export class TrainingEditModalComponent implements OnChanges {
     this.closed.emit();
   }
 
-  get unrecognisedSymptoms(): string[] {
+  getSymptomLabel(s: TrainingSymptom | string): string {
+    return typeof s === 'object' ? (s.label || s.key) : s;
+  }
+
+  isSymptomUnrecognised(s: TrainingSymptom | string): boolean {
+    const key = typeof s === 'object' ? s.key : s;
+    return !this.CANONICAL_SYMPTOMS.includes(key);
+  }
+
+  get unrecognisedSymptoms(): (TrainingSymptom | string)[] {
     if (!this.detail?.selected_symptoms) return [];
-    return this.detail.selected_symptoms.filter(
-      s => !this.CANONICAL_SYMPTOMS.includes(s)
-    );
+    return this.detail.selected_symptoms.filter(s => this.isSymptomUnrecognised(s));
   }
 }

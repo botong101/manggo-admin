@@ -2,6 +2,11 @@
  // Mirror: mangosense/models.py → MangoImage (training fields only)
  // Mirror: mangosense/views/admin_dashboard_views.py → Option B endpoints
 
+ export interface TrainingSymptom {
+   key: string;
+   label: string;
+ }
+
  /** Payload returned by GET /api/training-data/<pk>/ */
  export interface TrainingDataDetail {
    id: number;
@@ -12,7 +17,7 @@
    is_verified: boolean;
    training_ready: boolean;
    training_notes: string;
-   selected_symptoms: string[] | null;   // JSONField — can be null
+   selected_symptoms: TrainingSymptom[] | null;
    uploaded_at: string;                  // ISO 8601
  }
 
