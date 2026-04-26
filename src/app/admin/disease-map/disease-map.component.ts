@@ -28,6 +28,11 @@ const PALETTE = [
   '#f43f5e', // rose
 ];
 
+export interface TimeRangeOption {
+  label: string;
+  days: number;
+}
+
 @Component({
   selector: 'app-disease-map',
   templateUrl: './disease-map.component.html',
@@ -41,12 +46,23 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private map?: L.Map;
   private markerLayer = L.layerGroup();
 
-  loading       = true;
-  locations: DiseaseLocation[] = [];
-  uniqueDiseases: string[] = [];
-  diseaseColors = new Map<string, string>();
-  activeFilter  = 'all';
-  totalLocations = 0;
+  loading        = true;
+  allLocations: DiseaseLocation[] = [];
+  locations: DiseaseLocation[]    = [];
+  uniqueDiseases: string[]        = [];
+  diseaseColors  = new Map<string, string>();
+
+  activeFilter      = 'all';
+  activeDiseaseType: 'all' | 'leaf' | 'fruit' = 'all';
+  activeDays        = 60;   // default: last 2 months
+  totalLocations    = 0;
+
+  readonly timeRanges: TimeRangeOption[] = [
+    { label: 'Last month',    days: 30 },
+    { label: 'Last 2 months', days: 60 },
+    { label: 'Last 3 months', days: 90 },
+    { label: 'All time',      days: 0  },
+  ];
 
   constructor(private svc: MangoDiseaseService) {}
 
@@ -65,7 +81,7 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private initMap() {
     this.map = L.map(this.mapEl.nativeElement, {
-      center: [12.8797, 121.7740],   // Philippines
+      center: [12.8797, 121.7740],
       zoom: 6,
       zoomControl: true,
       attributionControl: true,
@@ -85,25 +101,48 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
   async fetchLocations() {
     try {
       const resp = await firstValueFrom(this.svc.getDiseaseLocations());
-      this.locations     = resp?.data?.locations ?? [];
-      this.totalLocations = this.locations.length;
-
-      const diseases = [...new Set(this.locations.map(l => l.disease))].sort();
-      this.uniqueDiseases = diseases;
-      let idx = 0;
-      diseases.forEach(d => {
-        if (d.toLowerCase().includes('healthy')) {
-          this.diseaseColors.set(d, '#22c55e');
-        } else {
-          this.diseaseColors.set(d, PALETTE[idx++ % PALETTE.length]);
-        }
-      });
-
+      this.allLocations = resp?.data?.locations ?? [];
+      this.applyFilters();
       this.loading = false;
-      this.renderMarkers();
     } catch {
       this.loading = false;
     }
+  }
+
+
+  private applyFilters() {
+    const now      = Date.now();
+    const cutoffMs = this.activeDays > 0 ? this.activeDays * 86_400_000 : null;
+
+    this.locations = this.allLocations.filter(loc => {
+      if (cutoffMs && loc.uploaded_at) {
+        if (now - new Date(loc.uploaded_at).getTime() > cutoffMs) return false;
+      }
+      if (this.activeDiseaseType !== 'all') {
+        if (this.inferDiseaseType(loc.disease) !== this.activeDiseaseType) return false;
+      }
+      return true;
+    });
+
+    this.totalLocations = this.locations.length;
+
+    const diseases = [...new Set(this.locations.map(l => l.disease))].sort();
+    this.uniqueDiseases = diseases;
+
+    this.diseaseColors.clear();
+    let idx = 0;
+    diseases.forEach(d => {
+      this.diseaseColors.set(
+        d,
+        d.toLowerCase().includes('healthy') ? '#22c55e' : PALETTE[idx++ % PALETTE.length]
+      );
+    });
+
+    if (this.activeFilter !== 'all' && !this.uniqueDiseases.includes(this.activeFilter)) {
+      this.activeFilter = 'all';
+    }
+
+    this.renderMarkers();
   }
 
 
@@ -118,7 +157,7 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
     visible.forEach(loc => {
       const color  = this.diseaseColors.get(loc.disease) ?? '#6b7280';
       const conf   = typeof loc.confidence === 'number' ? loc.confidence : 0.5;
-      const radius = 7 + conf * 12;          // 7–19 px
+      const radius = 7 + conf * 12;
       const pct    = (conf * 100).toFixed(1);
       const date   = loc.uploaded_at
         ? new Date(loc.uploaded_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -159,9 +198,27 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
 
+  setDays(days: number) {
+    this.activeDays = days;
+    this.applyFilters();
+  }
+
+  setDiseaseType(type: 'all' | 'leaf' | 'fruit') {
+    this.activeDiseaseType = type;
+    this.applyFilters();
+  }
+
   setFilter(disease: string) {
     this.activeFilter = disease;
     this.renderMarkers();
+  }
+
+
+  private inferDiseaseType(name: string): 'leaf' | 'fruit' | 'general' {
+    const lc = name.toLowerCase();
+    if (lc.includes('leaf') || lc.includes('anthracnose') || lc.includes('powdery') || lc.includes('blight')) return 'leaf';
+    if (lc.includes('fruit') || lc.includes('rot') || lc.includes('stem') || lc.includes('tip')) return 'fruit';
+    return 'general';
   }
 
 
@@ -177,5 +234,9 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.activeFilter === 'all'
       ? this.locations.length
       : this.locations.filter(l => l.disease === this.activeFilter).length;
+  }
+
+  get allTimeTotal(): number {
+    return this.allLocations.length;
   }
 }
