@@ -190,99 +190,114 @@
             <div class="flex items-center space-x-3">
               <div class="bg-white bg-opacity-20 p-2 rounded-lg">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                 </svg>
               </div>
               <div>
                 <h2 class="text-lg font-bold">Disease Trends</h2>
-                <p class="text-blue-100 text-xs">Daily detection activity — last {{ trendPeriod }} days</p>
+                <!-- legend -->
+                <div class="flex items-center gap-3 mt-0.5">
+                  <span class="flex items-center gap-1.5 text-xs text-blue-100">
+                    <span class="inline-block w-2.5 h-2.5 rounded-sm bg-green-300"></span>Healthy
+                  </span>
+                  <span class="flex items-center gap-1.5 text-xs text-blue-100">
+                    <span class="inline-block w-2.5 h-2.5 rounded-sm bg-red-300"></span>Diseased
+                  </span>
+                </div>
               </div>
             </div>
-            <!-- legend -->
-            <div class="hidden sm:flex items-center space-x-3 text-xs text-blue-100">
-              <span class="flex items-center space-x-1.5">
-                <span class="inline-block w-3 h-0.5 bg-blue-200 rounded"></span><span>Total</span>
-              </span>
-              <span class="flex items-center space-x-1.5">
-                <span class="inline-block w-3 h-0.5 bg-green-300 rounded"></span><span>Healthy</span>
-              </span>
-              <span class="flex items-center space-x-1.5">
-                <span class="inline-block w-3 h-0.5 bg-red-300 rounded"></span><span>Diseased</span>
-              </span>
+            <!-- period selector -->
+            <div class="flex items-center gap-1 bg-white bg-opacity-15 rounded-lg p-1">
+              <button *ngFor="let d of trendDayOptions"
+                      (click)="changeTrendPeriod(d)"
+                      class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all duration-150"
+                      [ngClass]="trendPeriod === d
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-blue-100 hover:bg-white hover:bg-opacity-20'">
+                {{ d }}d
+              </button>
             </div>
           </div>
         </div>
 
+        <!-- ── Disease-type filter ──────────────────────────────────────── -->
+        <div class="flex items-center gap-2 px-6 py-2.5 bg-gray-50 border-b border-gray-100">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-1">Type</span>
+
+          <button (click)="setTrendType('all')"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-150"
+                  [ngClass]="activeTrendType === 'all'
+                    ? 'bg-gray-700 text-white border-gray-700'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-500 hover:text-gray-800'">
+            All Types
+          </button>
+
+          <button (click)="setTrendType('leaf')"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-150"
+                  [ngClass]="activeTrendType === 'leaf'
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-400 hover:text-emerald-700'">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2h.17L17 8z"/>
+            </svg>
+            Leaf Disease
+          </button>
+
+          <button (click)="setTrendType('fruit')"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-150"
+                  [ngClass]="activeTrendType === 'fruit'
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-amber-400 hover:text-amber-700'">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 2c0 0-4 2-4 8 0 3.5 2.5 6.5 5.5 7.5-.3.9-.5 1.7-.5 2.5H4v2h16v-2h-4c0-.8-.2-1.6-.5-2.5C18.5 16.5 21 13.5 21 10c0-6-4-8-4-8s-1 3-3 4c-1.1.5-2.4.5-3.5 0C8 5 7 2 7 2z"/>
+            </svg>
+            Fruit Disease
+          </button>
+        </div>
+
         <div class="p-6">
 
-          <!-- no trend data fallback -->
-          <div *ngIf="!hasTrendData" class="flex flex-col items-center justify-center min-h-64 text-gray-400">
+          <!-- no trend data -->
+          <div *ngIf="!hasTrendData && !trendLoading"
+               class="flex flex-col items-center justify-center min-h-64 text-gray-400">
             <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
             <p class="text-sm font-medium">No trend data yet</p>
             <p class="text-xs mt-1">Uploads will appear here once recorded</p>
           </div>
 
-          <!-- SVG line chart -->
-          <div *ngIf="hasTrendData" class="overflow-x-auto">
-            <svg [attr.viewBox]="'0 0 ' + svgW + ' ' + svgH"
-                 width="100%"
-                 [attr.height]="svgH"
-                 class="trend-chart block">
+          <!-- Chart.js canvas — always mounted once hasTrendData is true so the chart instance persists across period changes -->
+          <div *ngIf="hasTrendData" class="relative" style="height:220px">
+            <!-- loading overlay (period or type change) -->
+            <div *ngIf="trendLoading"
+                 class="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-80 rounded-xl">
+              <div class="w-7 h-7 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin"></div>
+            </div>
+            <!-- no detections for this type / period -->
+            <div *ngIf="trendFilterEmpty && !trendLoading"
+                 class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white bg-opacity-90 rounded-xl">
+              <div class="bg-gray-100 rounded-full w-11 h-11 flex items-center justify-center mb-2">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                </svg>
+              </div>
+              <p class="text-sm font-semibold text-gray-600">No {{ activeTrendType }} disease detections</p>
+              <p class="text-xs text-gray-400 mt-1">in the last {{ trendPeriod }} days</p>
+            </div>
+            <canvas #trendCanvas></canvas>
+          </div>
 
-              <!-- horizontal grid lines -->
-              <g *ngFor="let tick of yAxisLabels">
-                <line [attr.x1]="cLeft" [attr.y1]="tick.y"
-                      [attr.x2]="cLeft + cW" [attr.y2]="tick.y"
-                      stroke="#e5e7eb" stroke-width="1"/>
-                <!-- y-axis label -->
-                <text [attr.x]="cLeft - 6" [attr.y]="tick.y + 4"
-                      text-anchor="end" font-size="10" fill="#9ca3af">
-                  {{ tick.val }}
-                </text>
-              </g>
-
-              <!-- x-axis base line -->
-              <line [attr.x1]="cLeft" [attr.y1]="cTop + cH"
-                    [attr.x2]="cLeft + cW" [attr.y2]="cTop + cH"
-                    stroke="#d1d5db" stroke-width="1.5"/>
-
-              <!-- x-axis labels -->
-              <g *ngFor="let lbl of xAxisLabels">
-                <text [attr.x]="lbl.x" [attr.y]="cTop + cH + 16"
-                      text-anchor="middle" font-size="9" fill="#9ca3af">
-                  {{ lbl.label }}
-                </text>
-              </g>
-
-              <!-- total line (blue) -->
-              <polyline [attr.points]="totalPolyline"
-                        fill="none" stroke="#3b82f6" stroke-width="2"
-                        stroke-linejoin="round" stroke-linecap="round"
-                        class="trend-line-total"/>
-
-              <!-- healthy line (green) -->
-              <polyline [attr.points]="healthyPolyline"
-                        fill="none" stroke="#22c55e" stroke-width="2"
-                        stroke-linejoin="round" stroke-linecap="round"
-                        class="trend-line-healthy"/>
-
-              <!-- diseased line (red) -->
-              <polyline [attr.points]="diseasedPolyline"
-                        fill="none" stroke="#ef4444" stroke-width="2"
-                        stroke-linejoin="round" stroke-linecap="round"
-                        class="trend-line-diseased"/>
-
-              <!-- dots on total line -->
-              <g *ngFor="let pt of chartPoints; let i = index">
-                <circle *ngIf="pt.total > 0"
-                        [attr.cx]="cLeft + (chartPoints.length > 1 ? (i / (chartPoints.length - 1)) * cW : cW / 2)"
-                        [attr.cy]="cTop + cH - (trendMaxVal > 0 ? (pt.total / trendMaxVal) * cH : 0)"
-                        r="3" fill="#3b82f6" stroke="white" stroke-width="1.5"
-                        class="trend-dot"/>
-              </g>
+          <!-- low-data warning -->
+          <div *ngIf="lowDataWarning && !trendLoading"
+               class="flex items-center gap-2 mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
+            Low data — fewer than 10 {{ activeTrendType }} disease detections in this period. Trend may not be reliable.
           </div>
 
           <!-- summary stats -->
@@ -300,9 +315,7 @@
               <div class="text-xs text-red-600 mt-0.5">Avg Daily Diseased</div>
             </div>
             <div class="bg-purple-50 rounded-xl p-3 text-center">
-              <div class="text-xl font-bold text-purple-700">
-                {{ healthRate | number:'1.0-1' }}%
-              </div>
+              <div class="text-xl font-bold text-purple-700">{{ healthRate | number:'1.0-1' }}%</div>
               <div class="text-xs text-purple-600 mt-0.5">Avg Health Rate</div>
             </div>
           </div>

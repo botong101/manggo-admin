@@ -1,12 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
+import { Chart } from 'chart.js/auto';
 import { MangoDiseaseService, DiseaseStats, MangoImage, TrendPoint } from '../../services/mango-disease.service';
 import { Router } from '@angular/router';
 
 interface HeatmapCell {
   disease: string;
   count: number;
-  intensity: number;   // 0–100
+  intensity: number;
   isHealthy: boolean;
   percentage: number;
   bgColor: string;
@@ -37,7 +39,11 @@ interface ChartPoint {
   styleUrls: ['./dashboard.component.css'],
   standalone: false
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  @ViewChild('trendCanvas') canvasRef?: ElementRef<HTMLCanvasElement>;
+
+  private chart?: Chart;
 
   currentDate = new Date().toLocaleDateString();
 
@@ -48,7 +54,7 @@ export class DashboardComponent implements OnInit {
   recentImages: MangoImage[] = [];
 
   // stat card counts
-  totalImages = 0;
+  totalImages   = 0;
   healthyImages = 0;
   diseasedImages = 0;
 
@@ -60,45 +66,39 @@ export class DashboardComponent implements OnInit {
 
   // ── Trend chart ───────────────────────────────────────────────────────
   chartPoints: ChartPoint[] = [];
-  trendPeriod = 30;
-  hasTrendData = false;
+  trendPeriod      = 30;
+  hasTrendData     = false;
+  trendLoading     = false;
+  activeTrendType: 'all' | 'leaf' | 'fruit' = 'all';
+  lowDataWarning   = false;
+  trendFilterEmpty = false;
+  readonly trendDayOptions = [7, 14, 30];
 
-  // SVG coordinate constants
-  readonly svgW  = 620;
-  readonly svgH  = 210;
-  readonly cLeft = 52;    // chart area left edge in SVG coords
-  readonly cTop  = 10;    // chart area top edge
-  readonly cW    = 555;   // chart area width
-  readonly cH    = 155;   // chart area height
-
-  totalPolyline    = '';
-  healthyPolyline  = '';
-  diseasedPolyline = '';
-
-  trendMaxVal  = 1;
-  avgTotal     = 0;
-  avgHealthy   = 0;
-  avgDiseased  = 0;
-  totalTrendCount   = 0;
-  healthyTrendCount = 0;
-  diseasedTrendCount = 0;
-  healthRate        = 0;
-  peakLabel    = '';
-
-  yAxisLabels: { y: number; val: number }[] = [];
-  xAxisLabels: { x: number; label: string }[] = [];
+  avgTotal    = 0;
+  avgHealthy  = 0;
+  avgDiseased = 0;
+  healthRate  = 0;
 
   // top diseases for list
   topDiseases: TopDisease[] = [];
 
   constructor(
     private mangoDiseaseService: MangoDiseaseService,
-    private router: Router
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
   ngOnInit() {
     this.loadDashboardData();
   }
+
+  ngAfterViewInit() {}
+
+  ngOnDestroy() {
+    this.chart?.destroy();
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────
 
   async loadDashboardData() {
     try {
@@ -245,64 +245,39 @@ export class DashboardComponent implements OnInit {
       diseased: d.diseased || 0
     }));
 
-    const allVals     = this.chartPoints.flatMap(p => [p.total, p.healthy, p.diseased]);
-    this.trendMaxVal  = Math.max(...allVals, 1);
+    const n = this.chartPoints.length;
+    const totalCount    = this.chartPoints.reduce((s, p) => s + p.total,    0);
+    const healthyCount  = this.chartPoints.reduce((s, p) => s + p.healthy,  0);
+    const diseasedCount = this.chartPoints.reduce((s, p) => s + p.diseased, 0);
 
-    const n          = this.chartPoints.length;
-    this.totalTrendCount   = this.chartPoints.reduce((s, p) => s + p.total, 0);
-    this.healthyTrendCount = this.chartPoints.reduce((s, p) => s + p.healthy, 0);
-    this.diseasedTrendCount = this.chartPoints.reduce((s, p) => s + p.diseased, 0);
+    this.avgTotal    = totalCount / n;
+    this.avgHealthy  = healthyCount / n;
+    this.avgDiseased = diseasedCount / n;
+    this.healthRate  = totalCount > 0 ? (healthyCount / totalCount) * 100 : 0;
 
-    this.avgTotal    = this.totalTrendCount / n;
-    this.avgHealthy  = this.healthyTrendCount / n;
-    this.avgDiseased = this.diseasedTrendCount / n;
-    this.healthRate  = this.totalTrendCount > 0 ? (this.healthyTrendCount / this.totalTrendCount) * 100 : 0;
+    const isFiltered      = this.activeTrendType !== 'all';
+    this.trendFilterEmpty = isFiltered && totalCount === 0;
+    this.lowDataWarning   = isFiltered && totalCount > 0 && totalCount < 10;
 
-    const peak   = this.chartPoints.reduce((m, p) => p.total > m.total ? p : m, this.chartPoints[0]);
-    this.peakLabel = peak.label;
-
-    this.totalPolyline    = this.pointsStr(this.chartPoints.map(p => p.total));
-    this.healthyPolyline  = this.pointsStr(this.chartPoints.map(p => p.healthy));
-    this.diseasedPolyline = this.pointsStr(this.chartPoints.map(p => p.diseased));
-
-    // y-axis labels (5 evenly spaced ticks)
-    this.yAxisLabels = [0, 1, 2, 3, 4].map(i => ({
-      y:   this.cTop + this.cH - (i / 4) * this.cH,
-      val: Math.round((i / 4) * this.trendMaxVal)
-    }));
-
-    // x-axis labels: ~6 ticks
-    const step = Math.max(1, Math.floor(n / 6));
-    const indices: number[] = [];
-    for (let i = 0; i < n; i += step) indices.push(i);
-    if (indices[indices.length - 1] !== n - 1) indices.push(n - 1);
-
-    this.xAxisLabels = indices.map(i => ({
-      x:     this.ptX(i, n),
-      label: this.chartPoints[i].label
-    }));
+    // Defer chart creation/update by one tick so Angular renders the canvas first
+    setTimeout(() => this.renderChart(), 0);
   }
 
-  private buildTrendChartFromImages(images: MangoImage[], days: number) {
+  private buildTrendChartFromImages(images: MangoImage[], days: number, type?: 'leaf' | 'fruit') {
+    const source = type ? images.filter(img => img.disease_type === type) : images;
+
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - (days - 1));
     cutoff.setHours(0, 0, 0, 0);
 
     const trendMap = new Map<string, TrendPoint>();
 
-    for (const image of images) {
+    for (const image of source) {
       const uploadedAt = new Date(image.uploaded_at);
-      if (isNaN(uploadedAt.getTime()) || uploadedAt < cutoff) {
-        continue;
-      }
+      if (isNaN(uploadedAt.getTime()) || uploadedAt < cutoff) continue;
 
       const dateKey = uploadedAt.toISOString().slice(0, 10);
-      const existing = trendMap.get(dateKey) ?? {
-        date: dateKey,
-        total: 0,
-        healthy: 0,
-        diseased: 0
-      };
+      const existing = trendMap.get(dateKey) ?? { date: dateKey, total: 0, healthy: 0, diseased: 0 };
 
       existing.total += 1;
       if ((image.predicted_class || '').toLowerCase().includes('healthy')) {
@@ -310,7 +285,6 @@ export class DashboardComponent implements OnInit {
       } else {
         existing.diseased += 1;
       }
-
       trendMap.set(dateKey, existing);
     }
 
@@ -319,31 +293,132 @@ export class DashboardComponent implements OnInit {
       const current = new Date();
       current.setDate(current.getDate() - (days - 1 - i));
       const dateKey = current.toISOString().slice(0, 10);
-      fallbackTrends.push(trendMap.get(dateKey) ?? {
-        date: dateKey,
-        total: 0,
-        healthy: 0,
-        diseased: 0
-      });
+      fallbackTrends.push(trendMap.get(dateKey) ?? { date: dateKey, total: 0, healthy: 0, diseased: 0 });
     }
 
-    if (fallbackTrends.some(point => point.total > 0)) {
+    // Always render when a type filter is active (even all-zero = informative empty state)
+    if (fallbackTrends.some(p => p.total > 0) || type) {
       this.buildTrendChart(fallbackTrends);
     }
   }
 
-  /** Convert a data value + index to SVG polyline points string */
-  private pointsStr(values: number[]): string {
-    const n = values.length;
-    return values.map((v, i) => {
-      const x = this.ptX(i, n);
-      const y = this.cTop + this.cH - (this.trendMaxVal > 0 ? (v / this.trendMaxVal) * this.cH : 0);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
+  private renderChart() {
+    if (!isPlatformBrowser(this.platformId) || !this.canvasRef) return;
+
+    const labels   = this.chartPoints.map(p => p.label);
+    const healthy  = this.chartPoints.map(p => p.healthy);
+    const diseased = this.chartPoints.map(p => p.diseased);
+
+    if (this.chart) {
+      // Smooth data update — no destroy/recreate
+      this.chart.data.labels = labels;
+      this.chart.data.datasets[0].data = healthy;
+      this.chart.data.datasets[1].data = diseased;
+      this.chart.update('active');
+      return;
+    }
+
+    this.chart = new Chart(this.canvasRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Healthy',
+            data: healthy,
+            backgroundColor: 'rgba(34, 197, 94, 0.82)',
+            hoverBackgroundColor: 'rgba(34, 197, 94, 1)',
+            stack: 'daily',
+            borderWidth: 0,
+            borderRadius: 3,
+            borderSkipped: false,
+          },
+          {
+            label: 'Diseased',
+            data: diseased,
+            backgroundColor: 'rgba(239, 68, 68, 0.82)',
+            hoverBackgroundColor: 'rgba(239, 68, 68, 1)',
+            stack: 'daily',
+            borderWidth: 0,
+            borderRadius: 3,
+            borderSkipped: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 350 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: '#f9fafb',
+            bodyColor:  '#d1d5db',
+            padding: 12,
+            cornerRadius: 10,
+            callbacks: {
+              title: items => items[0]?.label ?? '',
+              afterBody: items => {
+                const total    = items.reduce((s, i) => s + (i.raw as number), 0);
+                const dis      = items.find(i => i.dataset.label === 'Diseased')?.raw as number ?? 0;
+                const rate     = total > 0 ? ((dis / total) * 100).toFixed(0) : '0';
+                return [`Total: ${total}`, `Disease rate: ${rate}%`];
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid:   { display: false },
+            border: { display: false },
+            ticks:  { color: '#9ca3af', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            grid:   { color: '#f3f4f6' },
+            border: { display: false },
+            ticks:  { color: '#9ca3af', font: { size: 10 }, precision: 0 },
+          },
+        },
+      },
+    });
   }
 
-  private ptX(i: number, n: number): number {
-    return this.cLeft + (n > 1 ? (i / (n - 1)) * this.cW : this.cW / 2);
+  async changeTrendPeriod(days: number) {
+    if (this.trendPeriod === days) return;
+    this.trendPeriod  = days;
+    this.trendLoading = true;
+    try {
+      await this.reloadTrend();
+    } catch {}
+    this.trendLoading = false;
+  }
+
+  async setTrendType(type: 'all' | 'leaf' | 'fruit') {
+    if (this.activeTrendType === type) return;
+    this.activeTrendType = type;
+    this.trendLoading    = true;
+    try {
+      await this.reloadTrend();
+    } catch {}
+    this.trendLoading = false;
+  }
+
+  private async reloadTrend() {
+    if (this.activeTrendType === 'all') {
+      const resp = await firstValueFrom(this.mangoDiseaseService.getDiseaseTrends(this.trendPeriod));
+      if (resp?.success && resp.data?.daily_trends?.length) {
+        this.buildTrendChart(resp.data.daily_trends);
+      } else {
+        this.buildTrendChartFromImages(this.recentImages, this.trendPeriod);
+      }
+    } else {
+      this.buildTrendChartFromImages(this.recentImages, this.trendPeriod, this.activeTrendType);
+    }
   }
 
   private shortDateLabel(dateStr: string): string {
