@@ -12,6 +12,9 @@ import { UserConfirmationsComponent } from './user-confirmations/user-confirmati
 import { VerifiedDiseasesComponent } from './verified-diseases/verified-diseases.component';
 import { UserManagementComponent } from './user-management/user-management.component';
 import { DiseaseMapComponent } from './disease-map/disease-map.component';
+import { DiseaseTrendsComponent } from './dashboard/disease-trends/disease-trends.component';
+import { StatCardsComponent } from './dashboard/stat-cards/stat-cards.component';
+import { TopDiseasesListComponent } from './dashboard/top-diseases-list/top-diseases-list.component';
 import { TrainingEditModalComponent } from './training-data/training-edit-modal/training-edit-modal.component';
 import { TrainingSummaryComponent } from './training-data/training-summary.component';
 import { DataTableComponent } from '../components/data-table/data-table.component';
@@ -25,6 +28,9 @@ import { DiseaseSymptomsPageComponent } from './symptom-management/disease-sympt
 @NgModule({
   declarations: [
     DashboardComponent,
+    DiseaseTrendsComponent,
+    StatCardsComponent,
+    TopDiseasesListComponent,
     ImageDetailComponent,
     // UploadImagesComponent,
     ModelSettingsComponent,
@@ -33,7 +39,7 @@ import { DiseaseSymptomsPageComponent } from './symptom-management/disease-sympt
     VerifiedDiseasesComponent,
     UserManagementComponent,
     DiseaseMapComponent,
-  
+
   ],
   imports: [
     CommonModule,
