@@ -3,7 +3,10 @@
   <h1 class="text-xl font-bold text-gray-800 mb-1">Training Data Readiness</h1>
   <p class="text-sm text-gray-500 mb-6">
     Records must have <code class="text-xs bg-gray-100 px-1 rounded">training_ready = true</code>
-    to be ingested by the XGBoost symptom classifier.
+    to be included in model retraining. Go to
+    <a routerLink="/admin/model-settings"
+       class="text-blue-600 hover:underline font-medium">Model Settings</a>
+    to trigger retraining once data is ready.
   </p>
 
   <div *ngIf="loading" class="text-center py-16 text-gray-400">
@@ -17,6 +20,7 @@
 
   <ng-container *ngIf="summary && !loading">
 
+    <!-- Stat cards -->
     <div class="grid grid-cols-3 gap-4 mb-6">
       <div class="bg-white rounded-xl border border-gray-200 p-4">
         <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Training Ready</p>
@@ -32,6 +36,7 @@
       </div>
     </div>
 
+    <!-- Overall readiness bar -->
     <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
       <div class="flex justify-between text-sm text-gray-600 mb-2">
         <span>Overall Readiness</span>
@@ -43,10 +48,58 @@
         </div>
       </div>
       <p class="mt-2 text-xs text-gray-400">
-        Target: 70% before starting XGBoost training
+        Aim for sufficient verified images per class before triggering model retraining.
       </p>
     </div>
 
+    <!-- Retrain readiness status -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+
+      <!-- Leaf retrain status -->
+      <div class="bg-white rounded-xl border p-4"
+           [ngClass]="leafCanRetrain ? 'border-green-200' : 'border-yellow-200'">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-gray-700">Leaf Model — Retrain Ready</span>
+          <span [ngClass]="leafCanRetrain
+            ? 'bg-green-100 text-green-700'
+            : 'bg-yellow-100 text-yellow-700'"
+            class="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <i [ngClass]="leafCanRetrain ? 'fas fa-check' : 'fas fa-clock'"></i>
+            {{ leafCanRetrain ? 'Ready' : 'Not ready' }}
+          </span>
+        </div>
+        <p class="text-xs text-gray-500" *ngIf="leafDatasetInfo">
+          {{ leafEligibleCount }} of 5 classes have &ge;{{ minImagesPerClass }} verified images
+        </p>
+        <p class="text-xs text-gray-400 italic" *ngIf="!leafDatasetInfo">
+          Checking...
+        </p>
+      </div>
+
+      <!-- Fruit retrain status -->
+      <div class="bg-white rounded-xl border p-4"
+           [ngClass]="fruitCanRetrain ? 'border-green-200' : 'border-yellow-200'">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-gray-700">Fruit Model — Retrain Ready</span>
+          <span [ngClass]="fruitCanRetrain
+            ? 'bg-green-100 text-green-700'
+            : 'bg-yellow-100 text-yellow-700'"
+            class="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <i [ngClass]="fruitCanRetrain ? 'fas fa-check' : 'fas fa-clock'"></i>
+            {{ fruitCanRetrain ? 'Ready' : 'Not ready' }}
+          </span>
+        </div>
+        <p class="text-xs text-gray-500" *ngIf="fruitDatasetInfo">
+          {{ fruitEligibleCount }} of 5 classes have &ge;{{ minImagesPerClass }} verified images
+        </p>
+        <p class="text-xs text-gray-400 italic" *ngIf="!fruitDatasetInfo">
+          Checking...
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Per-class breakdown tables -->
     <div class="grid grid-cols-2 gap-6">
 
       <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -117,5 +170,6 @@
         </table>
       </div>
 
-    </div></ng-container>
+    </div>
+  </ng-container>
 </div>

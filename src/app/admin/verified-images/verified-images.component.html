@@ -146,7 +146,7 @@
         <button
           (click)="approveSelectedForTraining()"
           [disabled]="updatingSelected"
-          title="Mark selected images as approved for XGBoost training ingestion"
+          title="Mark selected images as approved for model retraining"
           class="bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors">
           <i class="fas fa-check-double mr-2" [class.animate-pulse]="updatingSelected"></i>
           {{ updatingSelected ? 'Processing...' : 'Approve for Training' }}
