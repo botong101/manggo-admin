@@ -848,7 +848,7 @@ export class VerifiedImagesComponent implements OnInit {
     }
   }
 
-  /** Bulk-approves all currently selected images for XGBoost training ingestion. */
+  /** Bulk-approves all currently selected images for model retraining. */
   approveSelectedForTraining(): void {
     const selectedIds = this.buttonsService.getSelectedIds(this.selectedImages);
     
