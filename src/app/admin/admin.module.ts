@@ -14,6 +14,13 @@ import { UserManagementComponent } from './user-management/user-management.compo
 import { DiseaseMapComponent } from './disease-map/disease-map.component';
 import { TrainingEditModalComponent } from './training-data/training-edit-modal/training-edit-modal.component';
 import { TrainingSummaryComponent } from './training-data/training-summary.component';
+import { DataTableComponent } from '../components/data-table/data-table.component';
+import { FormModalComponent } from '../components/form-modal/form-modal.component';
+import { ConfirmDialogComponent } from '../components/confirm-dialog/confirm-dialog.component';
+import { SymptomsPageComponent } from './symptom-management/symptoms-page.component';
+import { AliasesPageComponent } from './symptom-management/aliases-page.component';
+import { DiseasesPageComponent } from './symptom-management/diseases-page.component';
+import { DiseaseSymptomsPageComponent } from './symptom-management/disease-symptoms-page.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +32,8 @@ import { TrainingSummaryComponent } from './training-data/training-summary.compo
     UserConfirmationsComponent,
     VerifiedDiseasesComponent,
     UserManagementComponent,
-    DiseaseMapComponent
+    DiseaseMapComponent,
+  
   ],
   imports: [
     CommonModule,
@@ -33,7 +41,14 @@ import { TrainingSummaryComponent } from './training-data/training-summary.compo
     RouterModule, 
     AdminRoutingModule,
     TrainingEditModalComponent,
-    TrainingSummaryComponent
+    TrainingSummaryComponent,
+    DataTableComponent,
+    FormModalComponent,
+    ConfirmDialogComponent,
+    SymptomsPageComponent,
+    AliasesPageComponent,
+    DiseasesPageComponent,
+    DiseaseSymptomsPageComponent
   ]
 })
 export class AdminModule { }

@@ -26,53 +26,53 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    //check if logged in
+    // check if logged in
     this.authService.isAuthenticated$.subscribe(
       isAuth => {
         this.isAuthenticated = isAuth;
         this.updateNavigationVisibility();
         
-        //load notifs when logged in
+        // load notifs when logged in
         if (isAuth) {
           this.notificationService.loadNotifications();
         }
       }
     );
 
-    //get current user
+    // get current user
     this.authService.currentUser$.subscribe(
       user => {
         this.currentUser = user;
       }
     );
 
-    //get notif count
+    // get notif count
     this.notificationService.unreadCount$.subscribe(
       count => {
         this.unreadNotificationCount = count;
       }
     );
 
-    //watch route changes
+    // watch route changes
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
       this.updateNavigationVisibility();
     });
 
-    //check auth on load
+    // check auth on load
     this.isAuthenticated = this.authService.isLoggedIn();
     this.currentUser = this.authService.getCurrentUser();
     this.updateNavigationVisibility();
     
-    //load notifs if already logged in
+    // load notifs if already logged in
     if (this.isAuthenticated) {
       this.notificationService.loadNotifications();
     }
   }
 
   updateNavigationVisibility() {
-    //show nav when logged in and not on login page
+    // show nav when logged in and not on login page
     this.showNavigation = this.isAuthenticated && !this.router.url.includes('/login');
   }
 
@@ -82,7 +82,7 @@ export class AppComponent implements OnInit {
 
   navigateTo(route: string) {
     this.router.navigate([route]);
-    this.isMenuOpen = false; //close menu
+    this.isMenuOpen = false; // close menu
   }
 
   navigateToUploadImages() {
@@ -105,6 +105,29 @@ export class AppComponent implements OnInit {
     this.isMenuOpen = false;
   }
 
+  // --- Vocabulary Management Navigation Methods ---
+
+  navigateToSymptoms(): void {
+    this.router.navigate(['/admin/symptoms']);
+    this.isMenuOpen = false;
+  }
+
+  navigateToSymptomAliases(): void {
+    this.router.navigate(['/admin/symptom-aliases']);
+    this.isMenuOpen = false;
+  }
+
+  navigateToDiseases(): void {
+    this.router.navigate(['/admin/diseases']);
+    this.isMenuOpen = false;
+  }
+
+  navigateToDiseaseSymptoms(): void {
+    this.router.navigate(['/admin/disease-symptoms']);
+    this.isMenuOpen = false;
+  }
+
+
   navigateToNotifications() {
     this.showNotificationPanel = true;
     this.isMenuOpen = false;
@@ -120,7 +143,7 @@ export class AppComponent implements OnInit {
   }
 
   refreshData() {
-    //reload page
+    // reload page
     window.location.reload();
   }
 
@@ -138,7 +161,7 @@ export class AppComponent implements OnInit {
       return 'Admin User';
     }
     
-    //get full name or fallback to username
+    // get full name or fallback to username
     const firstName = this.currentUser.first_name || '';
     const lastName = this.currentUser.last_name || '';
     const fullName = `${firstName} ${lastName}`.trim();
