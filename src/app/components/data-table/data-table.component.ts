@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 export interface TableColumn {
   key: string;
@@ -8,6 +9,7 @@ export interface TableColumn {
 
 @Component({
   selector: 'app-data-table',
+  imports: [CommonModule],
   template: `
     <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
       <!-- Loading overlay -->

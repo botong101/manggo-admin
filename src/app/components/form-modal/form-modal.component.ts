@@ -1,4 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 export interface FormField {
   key: string;
@@ -10,6 +12,7 @@ export interface FormField {
 
 @Component({
   selector: 'app-form-modal',
+  imports: [CommonModule, FormsModule],
   template: `
     <div
       *ngIf="open"

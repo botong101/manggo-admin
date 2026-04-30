@@ -1,7 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-confirm-dialog',
+  imports: [CommonModule],
   template: `
     <div
       *ngIf="open"
