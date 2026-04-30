@@ -288,12 +288,14 @@ export class UserManagementComponent implements OnInit {
       user.is_active = !user.is_active;
       
       //update stats
-      if (user.is_active) {
-        this.userStats!.active_users++;
-        this.userStats!.inactive_users--;
-      } else {
-        this.userStats!.active_users--;
-        this.userStats!.inactive_users++;
+      if (this.userStats) {
+        if (user.is_active) {
+          this.userStats.active_users++;
+          this.userStats.inactive_users--;
+        } else {
+          this.userStats.active_users--;
+          this.userStats.inactive_users++;
+        }
       }
       
       const statusText = user.is_active ? 'enabled' : 'disabled';

@@ -236,7 +236,9 @@ export class UserConfirmationsComponent implements OnInit {
 
   getFilteredConfirmations(): UserConfirmation[] {
     return this.allConfirmations.filter(confirmation => {
-      // Search filter
+      if (this.showLocationOnly && !confirmation.latitude && !confirmation.longitude) {
+        return false;
+      }
       if (this.searchTerm) {
         const searchLower = this.searchTerm.toLowerCase();
         return confirmation.predicted_disease.toLowerCase().includes(searchLower) ||
@@ -323,7 +325,7 @@ export class UserConfirmationsComponent implements OnInit {
     const originalUrl = confirmation.image_data.image_url;
     
     if (!originalUrl) {
-      return `${baseUrl}/api/media/mango_images/${confirmation.image_data.original_filename}`;
+      return `${baseUrl}/media/mango_images/${confirmation.image_data.original_filename}`;
     }
     
     if (originalUrl.startsWith('http')) {
@@ -343,7 +345,7 @@ export class UserConfirmationsComponent implements OnInit {
       filePath = originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl;
     }
     
-    return `${baseUrl}/api/media/${filePath}`;
+    return `${baseUrl}/media/${filePath}`;
   }
 
   async downloadImage(confirmation: UserConfirmation) {

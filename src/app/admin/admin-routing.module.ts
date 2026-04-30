@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ImageDetailComponent } from './image-detail/image-detail.component';
-import { UploadImagesComponent } from './upload-images/upload-images.component';
 import { ModelSettingsComponent } from './model-settings/model-settings.component';
 import { VerifiedImagesComponent } from './verified-images/verified-images.component';
 import { UserConfirmationsComponent } from './user-confirmations/user-confirmations.component';
@@ -14,7 +13,7 @@ import { DiseasesPageComponent } from './symptom-management/diseases-page.compon
 import { DiseaseSymptomsPageComponent } from './symptom-management/disease-symptoms-page.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'images', redirectTo: '/admin/verified-images', pathMatch: 'full' }, //redirect
   { path: 'image-gallery', redirectTo: '/admin/verified-images', pathMatch: 'full' }, //redirect

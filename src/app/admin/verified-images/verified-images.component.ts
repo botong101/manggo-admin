@@ -598,7 +598,7 @@ export class VerifiedImagesComponent implements OnInit {
     const originalUrl = image.image_url || image.image;
     
     if (!originalUrl) {
-      return `${baseUrl}/api/media/mango_images/${image.original_filename}`;
+      return `${baseUrl}/media/mango_images/${image.original_filename}`;
     }
     
     if (originalUrl.startsWith('http')) {
@@ -618,10 +618,10 @@ export class VerifiedImagesComponent implements OnInit {
       filePath = originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl;
     }
     
-    return `${baseUrl}/api/media/${filePath}`;
+    return `${baseUrl}/media/${filePath}`;
   }
 
-  
+
   getDiseaseTypeClass(diseaseType: 'leaf' | 'fruit' | 'unknown' | undefined): string {
     if (!diseaseType || diseaseType === 'unknown') return 'text-orange-600'; // Default color for mango/unknown
     return diseaseType === 'leaf' ? 'text-green-600' : 'text-orange-600';

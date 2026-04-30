@@ -258,7 +258,7 @@ export class MangoDiseaseService {
               client_ip: image.client_ip,
               
               //extra stuff
-              disease_classification: image.predicted_class,
+              disease_classification: image.disease_classification || image.predicted_class,
               upload_date: image.uploaded_at,
               is_verified: image.is_verified || false,
               notes: image.notes || '',
