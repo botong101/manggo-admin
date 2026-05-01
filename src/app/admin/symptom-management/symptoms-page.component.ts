@@ -78,6 +78,7 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
         [open]="confirmOpen"
         title="Delete Symptom"
         [message]="'Delete symptom ' + (pendingDelete?.key ?? '') + '? This will fail if the symptom is linked to a disease.'"
+        (confirmClick)="onDeleteConfirm()"
         (cancelClick)="confirmOpen = false"
       ></app-confirm-dialog>
     </div>

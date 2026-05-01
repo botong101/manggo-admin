@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 // Services & Models
 import { DiseaseSymptomService } from '../../services/disease-symptom.service';
+import { DiseaseService } from '../../services/disease.service';
+import { SymptomService } from '../../services/symptom.service';
 import { DiseaseSymptom, DiseaseSymptomPayload } from '../../models/symptom-vocabulary/disease-symptom.model';
 // Components & Config Types
 import { DataTableComponent, TableColumn } from '../../components/data-table/data-table.component';
@@ -20,16 +22,14 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
           <p class="text-sm text-gray-500 mt-0.5">Map symptoms to specific diseases for the detection pipeline.</p>
         </div>
         <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-600">Filter by Disease ID:</span>
-            <input
-              type="number"
-              [(ngModel)]="diseaseFilter"
-              (ngModelChange)="onFilterChange()"
-              placeholder="All diseases"
-              class="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
+          <select
+            [(ngModel)]="diseaseFilter"
+            (ngModelChange)="onFilterChange()"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option [ngValue]="null">All diseases</option>
+            <option *ngFor="let d of diseaseOptions" [ngValue]="d.id">{{ d.name }} ({{ d.plant_part }})</option>
+          </select>
           <button
             (click)="openCreateModal()"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
@@ -83,13 +83,8 @@ export class DiseaseSymptomsPageComponent implements OnInit {
     { key: 'display_order', label: 'Order' },
   ];
 
-  // ---- Form field config ----
-  fields: FormField[] = [
-    { key: 'disease',       label: 'Disease ID',     type: 'number', required: true },
-    { key: 'symptom',       label: 'Symptom ID',     type: 'number', required: true },
-    { key: 'display_label', label: 'Display Label',  type: 'text' },
-    { key: 'display_order', label: 'Display Order',  type: 'number' },
-  ];
+  // ---- Form field config (populated dynamically in ngOnInit) ----
+  fields: FormField[] = [];
 
   // ---- State ----
   rows: DiseaseSymptom[] = [];
@@ -97,6 +92,7 @@ export class DiseaseSymptomsPageComponent implements OnInit {
   error = '';
   successMessage = '';
   diseaseFilter: number | null = null;
+  diseaseOptions: { id: number; name: string; plant_part: string }[] = [];
 
   modalOpen = false;
   modalTitle = '';
@@ -106,10 +102,35 @@ export class DiseaseSymptomsPageComponent implements OnInit {
   confirmOpen = false;
   pendingDelete: DiseaseSymptom | null = null;
 
-  constructor(private dsService: DiseaseSymptomService) {}
+  constructor(
+    private dsService: DiseaseSymptomService,
+    private diseaseService: DiseaseService,
+    private symptomService: SymptomService
+  ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    await this.loadDropdownOptions();
     this.loadRows();
+  }
+
+  async loadDropdownOptions(): Promise<void> {
+    try {
+      const [diseases, symptoms] = await Promise.all([
+        this.diseaseService.list().toPromise(),
+        this.symptomService.list().toPromise()
+      ]);
+      this.diseaseOptions = diseases ?? [];
+      this.fields = [
+        { key: 'disease', label: 'Disease', type: 'select', required: true,
+          options: (diseases ?? []).map(d => ({ value: d.id, label: `${d.name} (${d.plant_part})` })) },
+        { key: 'symptom', label: 'Symptom', type: 'select', required: true,
+          options: (symptoms ?? []).map(s => ({ value: s.id, label: `${s.key} (${s.plant_part})` })) },
+        { key: 'display_label', label: 'Display Label', type: 'text' },
+        { key: 'display_order', label: 'Display Order', type: 'number' },
+      ];
+    } catch {
+      this.error = 'Failed to load disease/symptom options.';
+    }
   }
 
   async loadRows(): Promise<void> {
