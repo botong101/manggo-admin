@@ -85,6 +85,16 @@ export class TrainingSummaryComponent implements OnInit {
     return Object.keys(this.fruitDatasetInfo?.eligible_classes ?? {}).length;
   }
 
+  get leafTotalClasses(): number {
+    return this.leafBreakdown.length
+      || Object.keys(this.leafDatasetInfo?.all_classes ?? {}).length;
+  }
+
+  get fruitTotalClasses(): number {
+    return this.fruitBreakdown.length
+      || Object.keys(this.fruitDatasetInfo?.all_classes ?? {}).length;
+  }
+
   get minImagesPerClass(): number {
     return this.leafDatasetInfo?.min_images_per_class ?? this.fruitDatasetInfo?.min_images_per_class ?? 5;
   }

@@ -171,6 +171,7 @@ export interface RetrainDatasetInfo {
 export interface RetrainStatus {
   is_running:      boolean;
   model_type:      string | null;
+  model_kind:      'mobilenetv2' | 'hybrid_cnn' | null;
   phase:           'starting' | 'preparing' | 'training' | 'evaluating' | 'saving' | 'done' | 'error' | null;
   progress:        number;
   message:         string;
@@ -180,6 +181,18 @@ export interface RetrainStatus {
   accuracy:        number | null;
   error:           string | null;
   dataset_info:    { [cls: string]: { total: number; train: number; val: number } } | null;
+}
+
+export interface SymptomExtractionStatus {
+  is_running:     boolean;
+  phase:          'starting' | 'scanning' | 'extracting' | 'saving' | 'done' | 'error' | null;
+  progress:       number;
+  message:        string;
+  started_at:     string | null;
+  finished_at:    string | null;
+  output_csv:     string | null;
+  rows_extracted: number | null;
+  error:          string | null;
 }
 @Injectable({
   providedIn: 'root'
@@ -715,11 +728,11 @@ export class MangoDiseaseService {
     );
   }
 
-  triggerRetrain(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<any>> {
+  triggerRetrain(modelType: 'leaf' | 'fruit', modelKind: 'mobilenetv2' | 'hybrid_cnn' = 'mobilenetv2'): Observable<ApiResponse<any>> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/retrain/`,
-      { model_type: modelType },
+      { model_type: modelType, model_kind: modelKind },
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
@@ -728,6 +741,31 @@ export class MangoDiseaseService {
     const token = localStorage.getItem('access_token');
     return this.http.get<ApiResponse<RetrainStatus>>(
       `${this.apiUrl}/retrain/status/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  triggerSymptomExtraction(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<any>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/retrain/extract-symptoms/`,
+      { model_type: modelType },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  getSymptomExtractionStatus(): Observable<ApiResponse<SymptomExtractionStatus>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<SymptomExtractionStatus>>(
+      `${this.apiUrl}/retrain/extract-symptoms/status/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  checkSymptomsReady(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<{ ready: boolean; csv_path: string | null; rows: number | null }>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<{ ready: boolean; csv_path: string | null; rows: number | null }>>(
+      `${this.apiUrl}/retrain/symptoms-ready/?model_type=${modelType}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
