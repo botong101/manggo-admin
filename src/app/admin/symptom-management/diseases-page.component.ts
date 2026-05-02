@@ -79,6 +79,10 @@ export class DiseasesPageComponent implements OnInit {
     { key: 'name',             label: 'Name' },
     { key: 'plant_part',       label: 'Plant Part' },
     { key: 'is_in_classifier', label: 'In Classifier', format: cellValue => cellValue ? 'Yes' : 'No' },
+    { key: 'treatment', label: 'Treatment / Management', wrap: true, maxWidth: '320px',
+      format: cellValue => cellValue
+        ? (cellValue.length > 120 ? cellValue.slice(0, 120) + '…' : cellValue)
+        : '—' },
   ];
 
   // ---- Form field config ----
@@ -86,7 +90,9 @@ export class DiseasesPageComponent implements OnInit {
     { key: 'name',             label: 'Name',           type: 'text',     required: true },
     { key: 'plant_part',       label: 'Plant Part',     type: 'select',   required: true,
       options: [{ value: 'leaf', label: 'Leaf' }, { value: 'fruit', label: 'Fruit' }] },
-    { key: 'is_in_classifier', label: 'In Classifier', type: 'checkbox' },
+    { key: 'is_in_classifier', label: 'In Classifier',  type: 'checkbox' },
+    { key: 'description',      label: 'Description',    type: 'textarea', rows: 3 },
+    { key: 'treatment',        label: 'Treatment / Management', type: 'textarea', rows: 5 },
   ];
 
   // ---- State ----
@@ -147,9 +153,11 @@ export class DiseasesPageComponent implements OnInit {
   async onModalSave(formValue: any): Promise<void> {
     this.error = '';
     const payload: DiseasePayload = {
-      name: formValue.name,
-      plant_part: formValue.plant_part,
+      name:             formValue.name,
+      plant_part:       formValue.plant_part,
       is_in_classifier: !!formValue.is_in_classifier,
+      description:      formValue.description ?? '',
+      treatment:        formValue.treatment    ?? '',
     };
 
     try {
