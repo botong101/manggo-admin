@@ -193,6 +193,16 @@ export interface SymptomExtractionStatus {
   output_csv:     string | null;
   rows_extracted: number | null;
   error:          string | null;
+export interface RetrainConfig {
+  epochs:                   number;
+  learning_rate:            number;
+  batch_size:               number;
+  val_split:                number;
+  unfreeze_top_n_layers:    number;
+  early_stopping_patience:  number;
+  lr_reduce_factor:         number;
+  lr_reduce_patience:       number;
+  min_images_per_class:     number;
 }
 @Injectable({
   providedIn: 'root'

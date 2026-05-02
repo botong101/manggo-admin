@@ -232,7 +232,7 @@ export class VerifiedImagesComponent implements OnInit {
     }
 
     filteredImages.forEach(image => {
-      const disease = image.predicted_class || 'Unknown';
+      const disease = image.disease_classification || image.predicted_class || 'Unknown';
       const diseaseType = this.getDiseaseType(image);
       
       //make unique key with disease and type
@@ -245,7 +245,7 @@ export class VerifiedImagesComponent implements OnInit {
     });
 
     const folders = Array.from(diseaseMap.entries()).map(([folderKey, imgs]) => {
-      const disease = imgs[0].predicted_class || 'Unknown';
+      const disease = imgs[0].disease_classification || imgs[0].predicted_class || 'Unknown';
       const diseaseType = this.getDiseaseType(imgs[0]);
       
       const displayName = diseaseType !== 'unknown' ? 
@@ -911,8 +911,9 @@ export class VerifiedImagesComponent implements OnInit {
       img.training_ready = event.training_ready;
     }
     
-    this.selectedTrainingImageId = null; // Close the modal
-    this.showSuccess('Training data saved.'); // Using your existing success notification!
+    this.selectedTrainingImageId = null;
+    this.loadAllImages();
+    this.showSuccess('Training data saved.');
   }
 
   viewImageDetails(imageId: number) {

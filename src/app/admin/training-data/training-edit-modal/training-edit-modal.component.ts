@@ -29,6 +29,15 @@ export class TrainingEditModalComponent implements OnChanges {
   formTrainingNotes = '';
   formDiseaseClassification = '';
 
+  readonly LEAF_CLASS_NAMES  = ['Anthracnose', 'Die Back', 'Healthy', 'Powdery Mildew', 'Sooty Mold'];
+  readonly FRUIT_CLASS_NAMES = ['Alternaria', 'Anthracnose', 'Black Mold Rot', 'Healthy', 'Stem end Rot'];
+
+  detailDiseaseType = '';
+
+  get availableClasses(): string[] {
+    return this.detailDiseaseType === 'fruit' ? this.FRUIT_CLASS_NAMES : this.LEAF_CLASS_NAMES;
+  }
+
   readonly CANONICAL_SYMPTOMS: string[] = [
     'leaf_spots', 'dark_spots_with_halo', 'concentric_rings',
     'yellow_discoloration', 'white_powdery_coating', 'black_sooty_coating',
@@ -53,6 +62,7 @@ export class TrainingEditModalComponent implements OnChanges {
         this.loading = false;
         if (res.success && res.data) {
           this.detail = res.data;
+          this.detailDiseaseType = res.data.disease_type || '';
           this.formTrainingReady = res.data.training_ready;
           this.formTrainingNotes = res.data.training_notes;
           this.formDiseaseClassification = res.data.disease_classification;

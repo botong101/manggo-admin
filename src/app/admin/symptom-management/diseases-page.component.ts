@@ -1,23 +1,40 @@
 import { Component, OnInit } from '@angular/core';
 // Services & Models
 import { DiseaseService } from '../../services/disease.service';
-import { Disease, DiseasePayload } from '../../models/symptom-vocabulary/disease.model';
+import {
+  Disease,
+  DiseasePayload,
+} from '../../models/symptom-vocabulary/disease.model';
 // Config Types
-import { DataTableComponent, TableColumn } from '../../components/data-table/data-table.component';
-import { FormField, FormModalComponent } from '../../components/form-modal/form-modal.component';
+import {
+  DataTableComponent,
+  TableColumn,
+} from '../../components/data-table/data-table.component';
+import {
+  FormField,
+  FormModalComponent,
+} from '../../components/form-modal/form-modal.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-diseases-page',
-  imports: [CommonModule, FormsModule, DataTableComponent, FormModalComponent, ConfirmDialogComponent], 
+  imports: [
+    CommonModule,
+    FormsModule,
+    DataTableComponent,
+    FormModalComponent,
+    ConfirmDialogComponent,
+  ],
   template: `
     <div class="p-6 max-w-6xl mx-auto">
       <div class="flex items-center justify-between mb-6">
         <div>
           <h1 class="text-2xl font-bold text-gray-800">Diseases</h1>
-          <p class="text-sm text-gray-500 mt-0.5">Manage the list of mango diseases recognized by the system.</p>
+          <p class="text-sm text-gray-500 mt-0.5">
+            Manage the list of mango diseases recognized by the system.
+          </p>
         </div>
         <div class="flex items-center gap-3">
           <select
@@ -38,10 +55,16 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
         </div>
       </div>
 
-      <div *ngIf="successMessage" class="mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
+      <div
+        *ngIf="successMessage"
+        class="mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm"
+      >
         {{ successMessage }}
       </div>
-      <div *ngIf="error" class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+      <div
+        *ngIf="error"
+        class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm"
+      >
         {{ error }}
       </div>
 
@@ -49,6 +72,7 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
         [columns]="columns"
         [rows]="rows"
         [loading]="loading"
+        (infoClick)="openDetailsModal($event)"
         (editClick)="openEditModal($event)"
         (deleteClick)="openDeleteDialog($event)"
       ></app-data-table>
@@ -69,23 +93,110 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
         (confirmClick)="onDeleteConfirm()"
         (cancelClick)="confirmOpen = false"
       ></app-confirm-dialog>
+      <div
+        *ngIf="detailsModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      >
+        <div
+          class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        >
+          <div
+            class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50"
+          >
+            <h3 class="text-lg font-semibold text-gray-800">
+              {{ selectedDiseaseDetails?.name }} - Details
+            </h3>
+            <button
+              (click)="closeDetailsModal()"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div class="px-6 py-4 overflow-y-auto space-y-6">
+            <div>
+              <h4
+                class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2"
+              >
+                Info (Description)
+              </h4>
+              <p class="text-gray-600 whitespace-pre-wrap leading-relaxed">
+                {{
+                  selectedDiseaseDetails?.description ||
+                    'No description available.'
+                }}
+              </p>
+            </div>
+            <div>
+              <h4
+                class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2"
+              >
+                Treatment
+              </h4>
+              <p class="text-gray-600 whitespace-pre-wrap leading-relaxed">
+                {{
+                  selectedDiseaseDetails?.treatment || 'No treatment specified.'
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end"
+          >
+            <button
+              (click)="closeDetailsModal()"
+              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  `
+  `,
 })
 export class DiseasesPageComponent implements OnInit {
   // ---- Table config ----
   columns: TableColumn[] = [
-    { key: 'id',               label: 'ID' },
-    { key: 'name',             label: 'Name' },
-    { key: 'plant_part',       label: 'Plant Part' },
-    { key: 'is_in_classifier', label: 'In Classifier', format: cellValue => cellValue ? 'Yes' : 'No' },
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'plant_part', label: 'Plant Part' },
+    {
+      key: 'is_in_classifier',
+      label: 'In Classifier',
+      format: (cellValue) => (cellValue ? 'Yes' : 'No'),
+    },
   ];
 
   // ---- Form field config ----
   fields: FormField[] = [
-    { key: 'name',             label: 'Name',           type: 'text',     required: true },
-    { key: 'plant_part',       label: 'Plant Part',     type: 'select',   required: true,
-      options: [{ value: 'leaf', label: 'Leaf' }, { value: 'fruit', label: 'Fruit' }] },
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    {
+      key: 'plant_part',
+      label: 'Plant Part',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'leaf', label: 'Leaf' },
+        { value: 'fruit', label: 'Fruit' },
+      ],
+    },
+    { key: 'description', label: 'Info', type: 'text', required: true },
+    { key: 'treatment', label: 'Treatment', type: 'text', required: true },
     { key: 'is_in_classifier', label: 'In Classifier', type: 'checkbox' },
   ];
 
@@ -103,6 +214,9 @@ export class DiseasesPageComponent implements OnInit {
   confirmOpen = false;
   pendingDelete: Disease | null = null;
 
+  detailsModalOpen = false;
+  selectedDiseaseDetails: Disease | null = null;
+
   constructor(private diseaseService: DiseaseService) {}
 
   ngOnInit(): void {
@@ -113,8 +227,10 @@ export class DiseasesPageComponent implements OnInit {
     this.loading = true;
     this.error = '';
     try {
-      const filters = this.plantPartFilter ? { plant_part: this.plantPartFilter as 'leaf' | 'fruit' } : undefined;
-      this.rows = await this.diseaseService.list(filters).toPromise() ?? [];
+      const filters = this.plantPartFilter
+        ? { plant_part: this.plantPartFilter as 'leaf' | 'fruit' }
+        : undefined;
+      this.rows = (await this.diseaseService.list(filters).toPromise()) ?? [];
     } catch (httpError: any) {
       this.error = httpError?.error?.error ?? 'Failed to load diseases.';
     } finally {
@@ -144,11 +260,23 @@ export class DiseasesPageComponent implements OnInit {
     this.modalOpen = false;
   }
 
+  openDetailsModal(disease: Disease): void {
+    this.selectedDiseaseDetails = disease;
+    this.detailsModalOpen = true;
+  }
+
+  closeDetailsModal(): void {
+    this.detailsModalOpen = false;
+    this.selectedDiseaseDetails = null;
+  }
+
   async onModalSave(formValue: any): Promise<void> {
     this.error = '';
     const payload: DiseasePayload = {
       name: formValue.name,
       plant_part: formValue.plant_part,
+      description: formValue.description,
+      treatment: formValue.treatment,
       is_in_classifier: !!formValue.is_in_classifier,
     };
 
@@ -189,6 +317,8 @@ export class DiseasesPageComponent implements OnInit {
 
   private showSuccess(toastMessage: string): void {
     this.successMessage = toastMessage;
-    setTimeout(() => { this.successMessage = ''; }, 3500);
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3500);
   }
 }
