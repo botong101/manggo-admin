@@ -193,6 +193,8 @@ export interface SymptomExtractionStatus {
   output_csv:     string | null;
   rows_extracted: number | null;
   error:          string | null;
+}
+  
 export interface RetrainConfig {
   epochs:                   number;
   learning_rate:            number;

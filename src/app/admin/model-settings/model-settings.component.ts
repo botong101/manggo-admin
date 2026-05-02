@@ -9,6 +9,7 @@ import {
   RetrainDatasetInfo,
   RetrainStatus,
   SymptomExtractionStatus,
+  RetrainConfig,
 } from '../../services/mango-disease.service';
 
 @Component({
