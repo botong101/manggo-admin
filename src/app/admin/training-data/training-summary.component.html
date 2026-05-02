@@ -86,8 +86,8 @@
           </span>
         </div>
         <p class="text-xs text-gray-500" *ngIf="leafDatasetInfo">
-          {{ leafEligibleCount }} of 5 classes have &ge;{{ minImagesPerClass }}
-          verified images
+          {{ leafEligibleCount }} of {{ leafTotalClasses }} classes have
+          &ge;{{ minImagesPerClass }} training-ready images
         </p>
         <p class="text-xs text-gray-400 italic" *ngIf="!leafDatasetInfo">
           Checking...
@@ -118,8 +118,8 @@
           </span>
         </div>
         <p class="text-xs text-gray-500" *ngIf="fruitDatasetInfo">
-          {{ fruitEligibleCount }} of 5 classes have &ge;{{ minImagesPerClass }}
-          verified images
+          {{ fruitEligibleCount }} of {{ fruitTotalClasses }} classes have
+          &ge;{{ minImagesPerClass }} training-ready images
         </p>
         <p class="text-xs text-gray-400 italic" *ngIf="!fruitDatasetInfo">
           Checking...

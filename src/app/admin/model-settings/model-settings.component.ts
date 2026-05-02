@@ -8,7 +8,7 @@ import {
   UpdateModelPayload,
   RetrainDatasetInfo,
   RetrainStatus,
-  RetrainConfig,
+  SymptomExtractionStatus,
 } from '../../services/mango-disease.service';
 
 @Component({
@@ -29,7 +29,9 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
   successMsg = '';
 
   // ── retrain state ──────────────────────────────────────────────────────────
-  retrainModelType: 'leaf' | 'fruit' = 'leaf';
+  retrainModelType: 'leaf' | 'fruit'             = 'leaf';
+  retrainModelKind: 'mobilenetv2' | 'hybrid_cnn' = 'mobilenetv2';
+
   datasetInfo: RetrainDatasetInfo | null = null;
   isLoadingDataset  = false;
   isRetraining      = false;
@@ -52,7 +54,17 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
 
   retrainConfig: RetrainConfig = { ...this.defaultRetrainConfig };
 
+  // ── symptom extraction state (Hybrid CNN only) ─────────────────────────────
+  symptomsReady    = false;
+  symptomsRowCount: number | null = null;
+  symptomsCSVPath: string | null  = null;
+  isCheckingSymptoms   = false;
+  isExtractingFeatures = false;
+  extractionStatus: SymptomExtractionStatus | null = null;
+  extractionErrorMsg = '';
+
   private pollSub: Subscription | null = null;
+  private extractionPollSub: Subscription | null = null;
 
   constructor(
     private router: Router,
@@ -61,12 +73,12 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadSettings();
-    // Check if a job is already running when the page loads
     this.checkRetrainStatus();
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
+    this.stopExtractionPolling();
   }
 
   // ── model-swap methods ─────────────────────────────────────────────────────
@@ -77,7 +89,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     this.mangoService.getModelSettings().subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.settings          = res.data;
+          this.settings           = res.data;
           this.selectedLeafModel  = res.data.active_models.leaf;
           this.selectedFruitModel = res.data.active_models.fruit;
         } else {
@@ -130,9 +142,17 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
   // ── retrain methods ────────────────────────────────────────────────────────
 
   onRetrainModelTypeChange(): void {
-    this.datasetInfo      = null;
-    this.retrainErrorMsg  = '';
+    this.datasetInfo       = null;
+    this.retrainErrorMsg   = '';
     this.retrainSuccessMsg = '';
+    this.resetExtractionState();
+  }
+
+  onRetrainModelKindChange(): void {
+    this.datasetInfo       = null;
+    this.retrainErrorMsg   = '';
+    this.retrainSuccessMsg = '';
+    this.resetExtractionState();
   }
 
   loadDatasetInfo(): void {
@@ -163,7 +183,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     this.retrainSuccessMsg = '';
     this.isRetraining      = true;
 
-    this.mangoService.triggerRetrain(this.retrainModelType, this.retrainConfig).subscribe({
+    this.mangoService.triggerRetrain(this.retrainModelType, this.retrainModelKind).subscribe({
       next: (res) => {
         if (res.success) {
           this.retrainSuccessMsg = res.message || 'Retraining started.';
@@ -215,7 +235,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
           }
         }
       },
-      error: () => { /* silently ignore on initial load */ },
+      error: () => {},
     });
   }
 
@@ -236,7 +256,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
                 this.retrainSuccessMsg =
                   `Retraining complete! Accuracy: ${res.data.accuracy}%. ` +
                   `New model: "${res.data.output_filename}"`;
-                this.loadSettings(); // refresh model list so new file appears
+                this.loadSettings();
               } else if (res.data.phase === 'error') {
                 this.retrainErrorMsg = res.data.error || 'Retraining failed.';
               }
@@ -254,6 +274,94 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     if (this.pollSub) {
       this.pollSub.unsubscribe();
       this.pollSub = null;
+    }
+  }
+
+  // ── symptom extraction methods (Hybrid CNN) ────────────────────────────────
+
+  private resetExtractionState(): void {
+    this.symptomsReady      = false;
+    this.symptomsRowCount   = null;
+    this.symptomsCSVPath    = null;
+    this.extractionStatus   = null;
+    this.extractionErrorMsg = '';
+    this.stopExtractionPolling();
+  }
+
+  checkSymptomsReady(): void {
+    this.isCheckingSymptoms = true;
+    this.extractionErrorMsg = '';
+    this.mangoService.checkSymptomsReady(this.retrainModelType).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.symptomsReady    = res.data.ready;
+          this.symptomsRowCount = res.data.rows;
+          this.symptomsCSVPath  = res.data.csv_path;
+        }
+        this.isCheckingSymptoms = false;
+      },
+      error: () => {
+        this.isCheckingSymptoms = false;
+      },
+    });
+  }
+
+  startFeatureExtraction(): void {
+    this.extractionErrorMsg  = '';
+    this.isExtractingFeatures = true;
+    this.symptomsReady       = false;
+
+    this.mangoService.triggerSymptomExtraction(this.retrainModelType).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.startExtractionPolling();
+        } else {
+          this.extractionErrorMsg  = res.message || 'Failed to start extraction.';
+          this.isExtractingFeatures = false;
+        }
+      },
+      error: (err) => {
+        this.extractionErrorMsg  = err?.error?.message || 'Could not start feature extraction.';
+        this.isExtractingFeatures = false;
+      },
+    });
+  }
+
+  private startExtractionPolling(): void {
+    this.stopExtractionPolling();
+    this.extractionPollSub = interval(2000)
+      .pipe(
+        switchMap(() => this.mangoService.getSymptomExtractionStatus()),
+        takeWhile((res) => res.data?.is_running === true, true)
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.extractionStatus = res.data;
+            if (!res.data.is_running) {
+              this.isExtractingFeatures = false;
+              if (res.data.phase === 'done') {
+                this.symptomsReady    = true;
+                this.symptomsRowCount = res.data.rows_extracted;
+                this.symptomsCSVPath  = res.data.output_csv;
+              } else if (res.data.phase === 'error') {
+                this.extractionErrorMsg = res.data.error || 'Feature extraction failed.';
+              }
+              this.stopExtractionPolling();
+            }
+          }
+        },
+        error: () => {
+          this.stopExtractionPolling();
+          this.isExtractingFeatures = false;
+        },
+      });
+  }
+
+  private stopExtractionPolling(): void {
+    if (this.extractionPollSub) {
+      this.extractionPollSub.unsubscribe();
+      this.extractionPollSub = null;
     }
   }
 
@@ -294,8 +402,23 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     return map[this.retrainStatus?.phase ?? ''] ?? '';
   }
 
-  get isConfigModified(): boolean {
-    return (Object.keys(this.defaultRetrainConfig) as (keyof RetrainConfig)[])
-      .some(k => this.retrainConfig[k] !== this.defaultRetrainConfig[k]);
+  get extractionProgressWidth(): string {
+    return `${this.extractionStatus?.progress ?? 0}%`;
+  }
+
+  get extractionPhaseLabel(): string {
+    const map: Record<string, string> = {
+      starting:   'Starting…',
+      scanning:   'Scanning images…',
+      extracting: 'Extracting features…',
+      saving:     'Saving CSV…',
+      done:       'Done',
+      error:      'Error',
+    };
+    return map[this.extractionStatus?.phase ?? ''] ?? '';
+  }
+
+  get canStartHybridRetrain(): boolean {
+    return !!this.datasetInfo?.can_retrain && this.symptomsReady;
   }
 }

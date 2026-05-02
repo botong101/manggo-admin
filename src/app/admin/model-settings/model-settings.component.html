@@ -107,7 +107,7 @@
     <div class="mb-4 border-t border-gray-200 pt-6">
       <h2 class="text-xl font-bold text-gray-800">Retrain Model</h2>
       <p class="text-sm text-gray-500 mt-1">
-        Fine-tune the active model using verified images from the database.
+        Fine-tune a model using verified images from the database.
         Images are preprocessed and split into train/val sets automatically.
       </p>
     </div>
@@ -130,6 +130,7 @@
 
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-5">
 
+      <!-- Model Type selector -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Model Type to Retrain</label>
         <div class="flex gap-3">
@@ -139,7 +140,7 @@
             [class.text-white]="retrainModelType === 'leaf'"
             [class.bg-gray-100]="retrainModelType !== 'leaf'"
             [class.text-gray-700]="retrainModelType !== 'leaf'"
-            [disabled]="isRetraining"
+            [disabled]="isRetraining || isExtractingFeatures"
             class="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Leaf
           </button>
@@ -149,300 +150,253 @@
             [class.text-white]="retrainModelType === 'fruit'"
             [class.bg-gray-100]="retrainModelType !== 'fruit'"
             [class.text-gray-700]="retrainModelType !== 'fruit'"
-            [disabled]="isRetraining"
+            [disabled]="isRetraining || isExtractingFeatures"
             class="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Fruit
           </button>
         </div>
       </div>
 
-      <!-- Advanced Training Configuration -->
-      <div class="border border-gray-200 rounded-lg overflow-hidden">
-        <button
-          type="button"
-          (click)="showAdvancedConfig = !showAdvancedConfig"
-          [disabled]="isRetraining"
-          class="w-full flex items-center justify-between px-4 py-3 bg-gray-50
-                 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors
-                 disabled:opacity-50 disabled:cursor-not-allowed">
-          <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+      <!-- Model Architecture selector -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Model Architecture</label>
+        <div class="flex gap-3">
+          <button
+            (click)="retrainModelKind = 'mobilenetv2'; onRetrainModelKindChange()"
+            [class.bg-blue-600]="retrainModelKind === 'mobilenetv2'"
+            [class.text-white]="retrainModelKind === 'mobilenetv2'"
+            [class.bg-gray-100]="retrainModelKind !== 'mobilenetv2'"
+            [class.text-gray-700]="retrainModelKind !== 'mobilenetv2'"
+            [disabled]="isRetraining || isExtractingFeatures"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            MobileNetV2
+          </button>
+          <button
+            (click)="retrainModelKind = 'hybrid_cnn'; onRetrainModelKindChange()"
+            [class.bg-purple-600]="retrainModelKind === 'hybrid_cnn'"
+            [class.text-white]="retrainModelKind === 'hybrid_cnn'"
+            [class.bg-gray-100]="retrainModelKind !== 'hybrid_cnn'"
+            [class.text-gray-700]="retrainModelKind !== 'hybrid_cnn'"
+            [disabled]="isRetraining || isExtractingFeatures"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Hybrid CNN
+          </button>
+        </div>
+        <p *ngIf="retrainModelKind === 'hybrid_cnn'" class="text-xs text-purple-600 mt-1.5">
+          Hybrid CNN requires symptom feature data extracted from the training dataset before retraining.
+        </p>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- MobileNetV2 flow                                                   -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <ng-container *ngIf="retrainModelKind === 'mobilenetv2'">
+
+        <div>
+          <button
+            (click)="loadDatasetInfo()"
+            [disabled]="isLoadingDataset || isRetraining"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+                   bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors
+                   disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg *ngIf="isLoadingDataset" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
-            Advanced Training Settings
-            <span *ngIf="isConfigModified"
-                  class="inline-flex items-center text-xs font-medium text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">
-              modified
-            </span>
-          </span>
-          <svg class="w-4 h-4 text-gray-400 transition-transform duration-200"
-               [class.rotate-180]="showAdvancedConfig"
-               fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+            <svg *ngIf="!isLoadingDataset" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+            </svg>
+            {{ isLoadingDataset ? 'Checking…' : 'Check Dataset' }}
+          </button>
+        </div>
 
-        <div *ngIf="showAdvancedConfig" class="p-4 space-y-4 border-t border-gray-200 bg-white">
+        <ng-container *ngTemplateOutlet="datasetInfoTpl"></ng-container>
 
-          <!-- Training -->
-          <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Training</p>
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div class="flex justify-end pt-2 border-t border-gray-100">
+          <button
+            (click)="startRetraining()"
+            [disabled]="isRetraining || !datasetInfo?.can_retrain"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
+                   bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800
+                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <svg *ngIf="isRetraining" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg *ngIf="!isRetraining" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ isRetraining ? 'Retraining…' : 'Start MobileNetV2 Retraining' }}
+          </button>
+        </div>
 
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Epochs</label>
-                <input type="number" min="1" max="100" step="1"
-                       [(ngModel)]="retrainConfig.epochs"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 10</p>
-              </div>
+      </ng-container>
 
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Learning Rate</label>
-                <input type="number" min="0.000001" max="0.1" step="0.00001"
-                       [(ngModel)]="retrainConfig.learning_rate"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 0.0001</p>
-              </div>
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- Hybrid CNN flow                                                    -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <ng-container *ngIf="retrainModelKind === 'hybrid_cnn'">
 
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Batch Size</label>
-                <input type="number" min="4" max="128" step="4"
-                       [(ngModel)]="retrainConfig.batch_size"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 16</p>
-              </div>
+        <!-- Step 1 ─ Symptom Feature Extraction -->
+        <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 space-y-3">
 
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Val Split</label>
-                <input type="number" min="0.05" max="0.5" step="0.05"
-                       [(ngModel)]="retrainConfig.val_split"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 0.2 (20%)</p>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Unfreeze Top N Layers</label>
-                <input type="number" min="1" max="100" step="1"
-                       [(ngModel)]="retrainConfig.unfreeze_top_n_layers"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 20</p>
-              </div>
-
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <span class="flex items-center justify-center w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-bold shrink-0">1</span>
+              <span class="text-sm font-semibold text-purple-900">Symptom Feature Extraction</span>
             </div>
-          </div>
 
-          <!-- Callbacks -->
-          <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Callbacks</p>
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Early Stop Patience</label>
-                <input type="number" min="1" max="20" step="1"
-                       [(ngModel)]="retrainConfig.early_stopping_patience"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 3</p>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">LR Reduce Factor</label>
-                <input type="number" min="0.1" max="0.9" step="0.1"
-                       [(ngModel)]="retrainConfig.lr_reduce_factor"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 0.5</p>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">LR Reduce Patience</label>
-                <input type="number" min="1" max="10" step="1"
-                       [(ngModel)]="retrainConfig.lr_reduce_patience"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 2</p>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Dataset gate -->
-          <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dataset Gate</p>
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Min Images / Class</label>
-                <input type="number" min="1" max="50" step="1"
-                       [(ngModel)]="retrainConfig.min_images_per_class"
-                       [disabled]="isRetraining"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500
-                              disabled:bg-gray-50 disabled:text-gray-400" />
-                <p class="text-xs text-gray-400 mt-0.5">default: 5</p>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Reset -->
-          <div class="flex justify-end pt-1 border-t border-gray-100">
-            <button
-              type="button"
-              (click)="resetRetrainConfig()"
-              [disabled]="isRetraining || !isConfigModified"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                     text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors
-                     disabled:opacity-40 disabled:cursor-not-allowed">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <!-- Status badge -->
+            <span *ngIf="symptomsReady"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 border border-green-200 rounded-full px-2.5 py-0.5">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              Reset to defaults
+              Symptoms data ready
+            </span>
+            <span *ngIf="!symptomsReady && !isExtractingFeatures"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2.5 py-0.5">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              No symptom data
+            </span>
+          </div>
+
+          <p class="text-xs text-purple-700">
+            Scans the training-ready dataset and extracts color, texture, and lesion features per image, saving them to a CSV file used by the Hybrid CNN co-attention model during training.
+          </p>
+
+          <!-- CSV ready info -->
+          <div *ngIf="symptomsReady" class="rounded bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-800 space-y-0.5">
+            <p *ngIf="symptomsRowCount !== null">
+              <span class="font-semibold">{{ symptomsRowCount }}</span> image features extracted
+            </p>
+            <p *ngIf="symptomsCSVPath" class="font-mono text-green-600 truncate">{{ symptomsCSVPath }}</p>
+          </div>
+
+          <!-- Extraction progress bar -->
+          <div *ngIf="isExtractingFeatures || extractionStatus?.phase === 'done' || extractionStatus?.phase === 'error'">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-purple-700 font-medium">{{ extractionPhaseLabel }}</span>
+              <span class="text-xs text-purple-500">{{ extractionStatus?.progress ?? 0 }}%</span>
+            </div>
+            <div class="w-full bg-purple-100 rounded-full h-2 overflow-hidden">
+              <div class="h-2 rounded-full transition-all duration-500"
+                   [class.bg-purple-500]="isExtractingFeatures"
+                   [class.bg-green-500]="extractionStatus?.phase === 'done'"
+                   [class.bg-red-500]="extractionStatus?.phase === 'error'"
+                   [style.width]="extractionProgressWidth">
+              </div>
+            </div>
+            <p *ngIf="extractionStatus?.message" class="text-xs text-purple-600 mt-1 italic">
+              {{ extractionStatus?.message }}
+            </p>
+          </div>
+
+          <!-- Extraction error -->
+          <div *ngIf="extractionErrorMsg"
+               class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">
+            {{ extractionErrorMsg }}
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex gap-2 flex-wrap">
+            <button
+              (click)="checkSymptomsReady()"
+              [disabled]="isCheckingSymptoms || isExtractingFeatures"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                     bg-white border border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg *ngIf="isCheckingSymptoms" class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <svg *ngIf="!isCheckingSymptoms" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              {{ isCheckingSymptoms ? 'Checking…' : 'Check CSV Status' }}
+            </button>
+            <button
+              (click)="startFeatureExtraction()"
+              [disabled]="isExtractingFeatures || isRetraining"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                     bg-purple-600 text-white hover:bg-purple-700 transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg *ngIf="isExtractingFeatures" class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <svg *ngIf="!isExtractingFeatures" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 7v10m16-10v10M4 7h16M4 17h16M9 12h6" />
+              </svg>
+              {{ isExtractingFeatures ? 'Extracting…' : (symptomsReady ? 'Re-extract Features' : 'Extract Features') }}
             </button>
           </div>
 
-        </div>
-      </div>
-      <!-- /Advanced Training Configuration -->
+        </div><!-- /step 1 -->
 
-      <div>
-        <button
-          (click)="loadDatasetInfo()"
-          [disabled]="isLoadingDataset || isRetraining"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors
-                 disabled:opacity-50 disabled:cursor-not-allowed">
-          <svg *ngIf="isLoadingDataset" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          <svg *ngIf="!isLoadingDataset" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
-          </svg>
-          {{ isLoadingDataset ? 'Checking…' : 'Check Dataset' }}
-        </button>
-      </div>
-
-      <div *ngIf="datasetInfo">
-
-        <div class="flex items-center gap-3 mb-3">
-          <span class="text-sm text-gray-600">
-            <span class="font-semibold">{{ datasetInfo.total_eligible_images }}</span>
-            eligible image(s) across
-            <span class="font-semibold">{{ eligibleClassEntries.length }}</span>
-            class(es)
-          </span>
-
-          <span *ngIf="datasetInfo.can_retrain"
-                class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2.5 py-0.5">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-            Ready to retrain
-          </span>
-          <span *ngIf="!datasetInfo.can_retrain"
-                class="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 rounded-full px-2.5 py-0.5">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
-            Not enough data
-          </span>
-        </div>
-
-        <div *ngIf="eligibleClassEntries.length > 0" class="mb-3">
-          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-            Eligible classes (≥ {{ datasetInfo.min_images_per_class }} images)
-          </p>
-          <div class="rounded-lg border border-gray-200 overflow-hidden">
-            <table class="w-full text-sm">
-              <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
-                <tr>
-                  <th class="px-3 py-2 text-left font-medium">Class</th>
-                  <th class="px-3 py-2 text-right font-medium">Verified Images</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                <tr *ngFor="let cls of eligibleClassEntries" class="hover:bg-gray-50">
-                  <td class="px-3 py-2 text-gray-800 font-medium">{{ cls.name }}</td>
-                  <td class="px-3 py-2 text-right text-gray-600">{{ cls.count }}</td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- Step 2 ─ Dataset check -->
+        <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-gray-500 text-white text-xs font-bold shrink-0">2</span>
+            <span class="text-sm font-semibold text-gray-800">Check Training Dataset</span>
           </div>
-        </div>
 
-        <div *ngIf="ineligibleClassEntries.length > 0">
-          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
-            Skipped classes (fewer than {{ datasetInfo.min_images_per_class }} images)
-          </p>
-          <div class="rounded-lg border border-orange-100 bg-orange-50 overflow-hidden">
-            <table class="w-full text-sm">
-              <tbody class="divide-y divide-orange-100">
-                <tr *ngFor="let cls of ineligibleClassEntries">
-                  <td class="px-3 py-2 text-orange-700">{{ cls.name }}</td>
-                  <td class="px-3 py-2 text-right text-orange-600">{{ cls.count }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <button
+            (click)="loadDatasetInfo()"
+            [disabled]="isLoadingDataset || isRetraining || isExtractingFeatures"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+                   bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors
+                   disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg *ngIf="isLoadingDataset" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg *ngIf="!isLoadingDataset" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+            </svg>
+            {{ isLoadingDataset ? 'Checking…' : 'Check Dataset' }}
+          </button>
+
+          <ng-container *ngTemplateOutlet="datasetInfoTpl"></ng-container>
+        </div><!-- /step 2 -->
+
+        <!-- Step 3 ─ Start retrain -->
+        <div class="flex flex-col items-end gap-1.5 pt-2 border-t border-gray-100">
+          <div class="text-xs text-gray-400 text-right space-y-0.5">
+            <p *ngIf="!symptomsReady">• Complete Step 1: extract symptom features first</p>
+            <p *ngIf="!datasetInfo">• Complete Step 2: check the training dataset first</p>
+            <p *ngIf="datasetInfo && !datasetInfo.can_retrain">• Step 2: not enough training data</p>
           </div>
-          <p class="text-xs text-gray-400 mt-1">
-            Verify more images for these classes to include them in retraining.
-          </p>
-        </div>
+          <button
+            (click)="startRetraining()"
+            [disabled]="isRetraining || isExtractingFeatures || !canStartHybridRetrain"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
+                   bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800
+                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <svg *ngIf="isRetraining" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg *ngIf="!isRetraining" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ isRetraining ? 'Retraining…' : 'Start Hybrid CNN Retraining' }}
+          </button>
+        </div><!-- /step 3 -->
 
-        <!-- Cannot retrain reason -->
-        <p *ngIf="!datasetInfo.can_retrain && datasetInfo.reason"
-           class="text-sm text-red-600 mt-2">{{ datasetInfo.reason }}</p>
-      </div>
-
-      <!-- Start Retraining button -->
-      <div class="flex justify-end pt-2 border-t border-gray-100">
-        <button
-          (click)="startRetraining()"
-          [disabled]="isRetraining || !datasetInfo?.can_retrain"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
-                 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800
-                 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-          <svg *ngIf="isRetraining" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          <svg *ngIf="!isRetraining" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          {{ isRetraining ? 'Retraining…' : 'Start Retraining' }}
-        </button>
-      </div>
+      </ng-container>
 
     </div><!-- /config card -->
 
+    <!-- ── Retraining progress card ──────────────────────────────────────── -->
     <div *ngIf="retrainStatus && (retrainStatus.is_running || retrainStatus.phase === 'done' || retrainStatus.phase === 'error')"
          class="mt-4 bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
 
@@ -460,6 +414,10 @@
           </svg>
           <span class="text-sm font-semibold text-gray-700">
             {{ retrainStatus.model_type | titlecase }} Model Retraining
+          </span>
+          <span *ngIf="retrainStatus.model_kind"
+                class="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 font-mono">
+            {{ retrainStatus.model_kind === 'hybrid_cnn' ? 'Hybrid CNN' : 'MobileNetV2' }}
           </span>
         </div>
         <span class="text-xs text-gray-400">{{ phaseLabel }}</span>
@@ -500,8 +458,7 @@
           class="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                  bg-green-600 text-white hover:bg-green-700 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5 13l4 4L19 7" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           Activate this model
         </button>
@@ -523,3 +480,78 @@
   </div><!-- /retrain section -->
 
 </div>
+
+<!-- ── Shared dataset info template ──────────────────────────────────────── -->
+<ng-template #datasetInfoTpl>
+  <div *ngIf="datasetInfo">
+
+    <div class="flex items-center gap-3 mb-3">
+      <span class="text-sm text-gray-600">
+        <span class="font-semibold">{{ datasetInfo.total_eligible_images }}</span>
+        eligible image(s) across
+        <span class="font-semibold">{{ eligibleClassEntries.length }}</span>
+        class(es)
+      </span>
+
+      <span *ngIf="datasetInfo.can_retrain"
+            class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2.5 py-0.5">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        Ready to retrain
+      </span>
+      <span *ngIf="!datasetInfo.can_retrain"
+            class="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 rounded-full px-2.5 py-0.5">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+        Not enough data
+      </span>
+    </div>
+
+    <div *ngIf="eligibleClassEntries.length > 0" class="mb-3">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+        Eligible classes (≥ {{ datasetInfo.min_images_per_class }} images)
+      </p>
+      <div class="rounded-lg border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+            <tr>
+              <th class="px-3 py-2 text-left font-medium">Class</th>
+              <th class="px-3 py-2 text-right font-medium">Verified Images</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr *ngFor="let cls of eligibleClassEntries" class="hover:bg-gray-50">
+              <td class="px-3 py-2 text-gray-800 font-medium">{{ cls.name }}</td>
+              <td class="px-3 py-2 text-right text-gray-600">{{ cls.count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div *ngIf="ineligibleClassEntries.length > 0">
+      <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+        Skipped classes (fewer than {{ datasetInfo.min_images_per_class }} images)
+      </p>
+      <div class="rounded-lg border border-orange-100 bg-orange-50 overflow-hidden">
+        <table class="w-full text-sm">
+          <tbody class="divide-y divide-orange-100">
+            <tr *ngFor="let cls of ineligibleClassEntries">
+              <td class="px-3 py-2 text-orange-700">{{ cls.name }}</td>
+              <td class="px-3 py-2 text-right text-orange-600">{{ cls.count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-gray-400 mt-1">
+        Verify more images for these classes to include them in retraining.
+      </p>
+    </div>
+
+    <p *ngIf="!datasetInfo.can_retrain && datasetInfo.reason"
+       class="text-sm text-red-600 mt-2">{{ datasetInfo.reason }}</p>
+
+  </div>
+</ng-template>
