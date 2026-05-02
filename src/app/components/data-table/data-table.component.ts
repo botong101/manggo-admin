@@ -5,6 +5,8 @@ export interface TableColumn {
   key: string;
   label: string;
   format?: (value: any) => string;
+  wrap?: boolean;      // allow cell text to wrap (default: nowrap)
+  maxWidth?: string;   // e.g. '260px' — constrains the column width
 }
 
 @Component({
@@ -43,7 +45,13 @@ export interface TableColumn {
             </td>
           </tr>
           <tr *ngFor="let tableRow of rows" class="hover:bg-gray-50 transition-colors">
-            <td *ngFor="let column of columns" class="px-4 py-3 text-gray-700 whitespace-nowrap">
+            <td
+              *ngFor="let column of columns"
+              class="px-4 py-3 text-gray-700 align-top"
+              [class.whitespace-nowrap]="!column.wrap"
+              [style.max-width]="column.maxWidth ?? null"
+              [title]="tableRow[column.key] ?? ''"
+            >
               {{ column.format ? column.format(tableRow[column.key]) : tableRow[column.key] }}
             </td>
             <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">

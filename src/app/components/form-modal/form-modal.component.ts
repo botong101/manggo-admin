@@ -5,9 +5,10 @@ import { FormsModule } from '@angular/forms';
 export interface FormField {
   key: string;
   label: string;
-  type: 'text' | 'select' | 'number' | 'checkbox';
+  type: 'text' | 'textarea' | 'select' | 'number' | 'checkbox';
   options?: { value: any; label: string }[];
   required?: boolean;
+  rows?: number;
 }
 
 @Component({
@@ -54,6 +55,21 @@ export interface FormField {
                 [required]="!!field.required"
                 class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
+            </div>
+
+            <!-- Textarea -->
+            <div *ngIf="field.type === 'textarea'" class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span *ngIf="field.required" class="text-red-500 ml-0.5">*</span>
+              </label>
+              <textarea
+                [(ngModel)]="formData[field.key]"
+                [name]="field.key"
+                [required]="!!field.required"
+                [rows]="field.rows ?? 4"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y"
+              ></textarea>
             </div>
 
             <!-- Select -->
