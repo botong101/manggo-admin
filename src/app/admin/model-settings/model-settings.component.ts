@@ -8,6 +8,7 @@ import {
   UpdateModelPayload,
   RetrainDatasetInfo,
   RetrainStatus,
+  RetrainConfig,
 } from '../../services/mango-disease.service';
 
 @Component({
@@ -35,6 +36,21 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
   retrainStatus: RetrainStatus | null = null;
   retrainErrorMsg   = '';
   retrainSuccessMsg = '';
+  showAdvancedConfig = false;
+
+  readonly defaultRetrainConfig: RetrainConfig = {
+    epochs:                  10,
+    learning_rate:           0.0001,
+    batch_size:              16,
+    val_split:               0.2,
+    unfreeze_top_n_layers:   20,
+    early_stopping_patience: 3,
+    lr_reduce_factor:        0.5,
+    lr_reduce_patience:      2,
+    min_images_per_class:    5,
+  };
+
+  retrainConfig: RetrainConfig = { ...this.defaultRetrainConfig };
 
   private pollSub: Subscription | null = null;
 
@@ -138,12 +154,16 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     });
   }
 
+  resetRetrainConfig(): void {
+    this.retrainConfig = { ...this.defaultRetrainConfig };
+  }
+
   startRetraining(): void {
     this.retrainErrorMsg   = '';
     this.retrainSuccessMsg = '';
     this.isRetraining      = true;
 
-    this.mangoService.triggerRetrain(this.retrainModelType).subscribe({
+    this.mangoService.triggerRetrain(this.retrainModelType, this.retrainConfig).subscribe({
       next: (res) => {
         if (res.success) {
           this.retrainSuccessMsg = res.message || 'Retraining started.';
@@ -262,14 +282,20 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
 
   get phaseLabel(): string {
     const map: Record<string, string> = {
-      starting:   'Starting…',
-      preparing:  'Preparing dataset…',
-      training:   'Training…',
-      evaluating: 'Evaluating…',
-      saving:     'Saving model…',
-      done:       'Done',
-      error:      'Error',
+      starting:    'Starting…',
+      downloading: 'Downloading images…',
+      preparing:   'Preparing dataset…',
+      training:    'Training…',
+      evaluating:  'Evaluating…',
+      saving:      'Saving model…',
+      done:        'Done',
+      error:       'Error',
     };
     return map[this.retrainStatus?.phase ?? ''] ?? '';
+  }
+
+  get isConfigModified(): boolean {
+    return (Object.keys(this.defaultRetrainConfig) as (keyof RetrainConfig)[])
+      .some(k => this.retrainConfig[k] !== this.defaultRetrainConfig[k]);
   }
 }

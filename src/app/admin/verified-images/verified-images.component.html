@@ -300,6 +300,9 @@
                       Confidence
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Classification
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -345,6 +348,14 @@
                       </span>
                     </td>
                     
+                    <!-- classification -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                            [title]="image.disease_classification || image.predicted_class">
+                        {{ image.disease_classification || image.predicted_class || '—' }}
+                      </span>
+                    </td>
+
                     <!-- status -->
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span 

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { MangoDiseaseService, MangoImage, ApiResponse, UserConfirmation } from '../../services/mango-disease.service';
+import { TrainingDataService } from '../../services/training-data.service';
 import { environment } from '../../../environments/environment';
 
 export interface PredictionData {
@@ -75,11 +76,23 @@ export class ImageDetailComponent implements OnInit {
   successMessage: string | null = null;
   private successTimer: any;
 
+  readonly LEAF_CLASS_NAMES  = ['Anthracnose', 'Die Back', 'Healthy', 'Powdery Mildew', 'Sooty Mold'];
+  readonly FRUIT_CLASS_NAMES = ['Alternaria', 'Anthracnose', 'Black Mold Rot', 'Healthy', 'Stem end Rot'];
+
+  editingClassification  = false;
+  editClassificationValue = '';
+  savingClassification   = false;
+
+  get availableClasses(): string[] {
+    return this.getDiseaseType() === 'fruit' ? this.FRUIT_CLASS_NAMES : this.LEAF_CLASS_NAMES;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private location: Location,
-    private mangoDiseaseService: MangoDiseaseService
+    private mangoDiseaseService: MangoDiseaseService,
+    private trainingDataService: TrainingDataService,
   ) {}
 
   ngOnInit() {
@@ -156,6 +169,40 @@ export class ImageDetailComponent implements OnInit {
       this.error = 'Could not update verification status. Please try again.';
     } finally {
       this.updating = false;
+    }
+  }
+
+  startEditClassification(): void {
+    if (!this.imageData) return;
+    this.editClassificationValue = this.imageData.disease_classification || this.imageData.predicted_class || '';
+    this.editingClassification = true;
+  }
+
+  cancelEditClassification(): void {
+    this.editingClassification = false;
+  }
+
+  async saveClassification(): Promise<void> {
+    if (!this.imageData || !this.editClassificationValue) return;
+    this.savingClassification = true;
+    this.error = null;
+    try {
+      const res = await firstValueFrom(
+        this.trainingDataService.patchTrainingDetail(this.imageData.id, {
+          disease_classification: this.editClassificationValue,
+        })
+      );
+      if (res.success) {
+        this.imageData.disease_classification = this.editClassificationValue;
+        this.editingClassification = false;
+        this.showSuccess('Disease classification updated.');
+      } else {
+        this.error = 'Could not update classification. Please try again.';
+      }
+    } catch {
+      this.error = 'Could not update classification. Please try again.';
+    } finally {
+      this.savingClassification = false;
     }
   }
 

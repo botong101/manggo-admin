@@ -171,7 +171,7 @@ export interface RetrainDatasetInfo {
 export interface RetrainStatus {
   is_running:      boolean;
   model_type:      string | null;
-  phase:           'starting' | 'preparing' | 'training' | 'evaluating' | 'saving' | 'done' | 'error' | null;
+  phase:           'starting' | 'downloading' | 'preparing' | 'training' | 'evaluating' | 'saving' | 'done' | 'error' | null;
   progress:        number;
   message:         string;
   started_at:      string | null;
@@ -180,6 +180,18 @@ export interface RetrainStatus {
   accuracy:        number | null;
   error:           string | null;
   dataset_info:    { [cls: string]: { total: number; train: number; val: number } } | null;
+}
+
+export interface RetrainConfig {
+  epochs:                   number;
+  learning_rate:            number;
+  batch_size:               number;
+  val_split:                number;
+  unfreeze_top_n_layers:    number;
+  early_stopping_patience:  number;
+  lr_reduce_factor:         number;
+  lr_reduce_patience:       number;
+  min_images_per_class:     number;
 }
 @Injectable({
   providedIn: 'root'
@@ -715,11 +727,11 @@ export class MangoDiseaseService {
     );
   }
 
-  triggerRetrain(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<any>> {
+  triggerRetrain(modelType: 'leaf' | 'fruit', config?: Partial<RetrainConfig>): Observable<ApiResponse<any>> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/retrain/`,
-      { model_type: modelType },
+      { model_type: modelType, ...config },
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
