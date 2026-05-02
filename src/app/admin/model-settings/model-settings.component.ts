@@ -29,6 +29,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
 
   // ── retrain state ──────────────────────────────────────────────────────────
   retrainModelType: 'leaf' | 'fruit' = 'leaf';
+  retrainModelVariant: 'standard' | 'hybrid' = 'standard';
   datasetInfo: RetrainDatasetInfo | null = null;
   isLoadingDataset  = false;
   isRetraining      = false;
@@ -143,7 +144,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     this.retrainSuccessMsg = '';
     this.isRetraining      = true;
 
-    this.mangoService.triggerRetrain(this.retrainModelType).subscribe({
+    this.mangoService.triggerRetrain(this.retrainModelType, this.retrainModelVariant).subscribe({
       next: (res) => {
         if (res.success) {
           this.retrainSuccessMsg = res.message || 'Retraining started.';

@@ -166,6 +166,16 @@ export interface RetrainDatasetInfo {
   min_images_per_class:  number;
   can_retrain:           boolean;
   reason:                string | null;
+  symptom_stats?: {
+    total_unique_symptoms: number;
+    per_class: { [cls: string]: {
+      image_count: number;
+      images_with_symptoms: number;
+      symptom_mentions: number;
+      unique_symptoms: number;
+      avg_symptoms_per_image: number;
+    }};
+  };
 }
 
 export interface RetrainStatus {
@@ -715,11 +725,11 @@ export class MangoDiseaseService {
     );
   }
 
-  triggerRetrain(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<any>> {
+  triggerRetrain(modelType: 'leaf' | 'fruit', modelVariant: 'standard' | 'hybrid' = 'standard'): Observable<ApiResponse<any>> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/retrain/`,
-      { model_type: modelType },
+      { model_type: modelType, model_variant: modelVariant },
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
