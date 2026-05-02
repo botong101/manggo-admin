@@ -28,11 +28,6 @@ const PALETTE = [
   '#f43f5e', // rose
 ];
 
-export interface TimeRangeOption {
-  label: string;
-  days: number;
-}
-
 @Component({
   selector: 'app-disease-map',
   templateUrl: './disease-map.component.html',
@@ -54,15 +49,22 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   activeFilter      = 'all';
   activeDiseaseType: 'all' | 'leaf' | 'fruit' = 'all';
-  activeDays        = 60;   // default: last 2 months
   totalLocations    = 0;
 
-  readonly timeRanges: TimeRangeOption[] = [
-    { label: 'Last month',    days: 30 },
-    { label: 'Last 2 months', days: 60 },
-    { label: 'Last 3 months', days: 90 },
-    { label: 'All time',      days: 0  },
-  ];
+  // Date-range filter — defaults to current month up to today
+  readonly today: string = new Date().toISOString().slice(0, 10);
+  dateFrom: string = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString().slice(0, 10);
+  dateTo:   string = this.today;
+
+  get dateRangeLabel(): string {
+    if (!this.dateFrom && !this.dateTo) return 'All time';
+    const fmt = (iso: string) =>
+      new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!this.dateFrom) return `Up to ${fmt(this.dateTo)}`;
+    if (!this.dateTo)   return `From ${fmt(this.dateFrom)}`;
+    return `${fmt(this.dateFrom)} – ${fmt(this.dateTo)}`;
+  }
 
   constructor(private svc: MangoDiseaseService) {}
 
@@ -111,12 +113,14 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   private applyFilters() {
-    const now      = Date.now();
-    const cutoffMs = this.activeDays > 0 ? this.activeDays * 86_400_000 : null;
+    const fromTime = this.dateFrom ? new Date(this.dateFrom + 'T00:00:00').getTime() : null;
+    const toTime   = this.dateTo   ? new Date(this.dateTo   + 'T23:59:59').getTime() : null;
 
     this.locations = this.allLocations.filter(loc => {
-      if (cutoffMs && loc.uploaded_at) {
-        if (now - new Date(loc.uploaded_at).getTime() > cutoffMs) return false;
+      if (loc.uploaded_at) {
+        const t = new Date(loc.uploaded_at).getTime();
+        if (fromTime && t < fromTime) return false;
+        if (toTime   && t > toTime  ) return false;
       }
       if (this.activeDiseaseType !== 'all') {
         if (this.inferDiseaseType(loc.disease) !== this.activeDiseaseType) return false;
@@ -198,8 +202,13 @@ export class DiseaseMapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
 
-  setDays(days: number) {
-    this.activeDays = days;
+  onDateChange() {
+    this.applyFilters();
+  }
+
+  resetDateRange() {
+    this.dateFrom = '';
+    this.dateTo   = '';
     this.applyFilters();
   }
 

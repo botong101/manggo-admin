@@ -6,6 +6,8 @@ export interface TableColumn {
   key: string;
   label: string;
   format?: (value: any) => string;
+  wrap?: boolean;      // allow cell text to wrap (default: nowrap)
+  maxWidth?: string;   // e.g. '260px' — constrains the column width
 }
 
 @Component({
