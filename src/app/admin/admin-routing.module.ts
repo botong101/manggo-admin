@@ -6,7 +6,6 @@ import { ModelSettingsComponent } from './model-settings/model-settings.componen
 import { VerifiedImagesComponent } from './verified-images/verified-images.component';
 import { UserConfirmationsComponent } from './user-confirmations/user-confirmations.component';
 import { UserManagementComponent } from './user-management/user-management.component';
-import { TrainingSummaryComponent } from './training-data/training-summary.component';
 import { SymptomsPageComponent } from './symptom-management/symptoms-page.component';
 import { AliasesPageComponent } from './symptom-management/aliases-page.component';
 import { DiseasesPageComponent } from './symptom-management/diseases-page.component';
@@ -23,7 +22,6 @@ const routes: Routes = [
   // { path: 'upload-images', component: UploadImagesComponent },
   { path: 'model-settings', component: ModelSettingsComponent },
   { path: 'user-confirmations', component: UserConfirmationsComponent },
-  { path: 'training-data', component: TrainingSummaryComponent },
   { path: 'symptoms',         component: SymptomsPageComponent },
   { path: 'symptom-aliases',  component: AliasesPageComponent },
   { path: 'diseases',         component: DiseasesPageComponent },

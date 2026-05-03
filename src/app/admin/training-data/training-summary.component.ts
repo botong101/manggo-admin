@@ -56,9 +56,9 @@ export class TrainingSummaryComponent implements OnInit {
 
   get readinessPct(): number {
     if (!this.summary || this.summary.total_verified === 0) return 0;
-    return Math.round(
+    return Math.min(100, Math.round(
       (this.summary.total_training_ready / this.summary.total_verified) * 100
-    );
+    ));
   }
 
   get leafBreakdown(): TrainingClassBreakdown[] {
