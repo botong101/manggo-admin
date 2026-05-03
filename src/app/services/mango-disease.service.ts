@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, throwError, catchError, map, tap } from 'rxjs';
+import { Observable, of, throwError, catchError, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 export interface ApiResponse<T> {
   success: boolean;
@@ -183,6 +183,19 @@ export interface RetrainStatus {
   dataset_info:    { [cls: string]: { total: number; train: number; val: number } } | null;
 }
 
+export interface PreprocessingStatus {
+  is_running:  boolean;
+  model_type:  string | null;
+  phase:       'starting' | 'downloading' | 'processing' | 'done' | 'error' | null;
+  progress:    number;
+  message:     string;
+  started_at:  string | null;
+  finished_at: string | null;
+  processed:   number | null;
+  failed:      number | null;
+  error:       string | null;
+}
+
 export interface SymptomExtractionStatus {
   is_running:     boolean;
   phase:          'starting' | 'scanning' | 'extracting' | 'saving' | 'done' | 'error' | null;
@@ -205,6 +218,7 @@ export interface RetrainConfig {
   lr_reduce_factor:         number;
   lr_reduce_patience:       number;
   min_images_per_class:     number;
+  modality_dropout:         number;
 }
 @Injectable({
   providedIn: 'root'
@@ -543,9 +557,7 @@ export class MangoDiseaseService {
 
           return normalized;
         }),
-        catchError(error => {
-          return of(null);
-        })
+        catchError(() => of(null))
       );
   }
 
@@ -732,19 +744,23 @@ export class MangoDiseaseService {
     );
   }
 
-  getRetrainDatasetInfo(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<RetrainDatasetInfo>> {
+  getRetrainDatasetInfo(modelType: 'leaf' | 'fruit', minImagesPerClass = 5): Observable<ApiResponse<RetrainDatasetInfo>> {
     const token = localStorage.getItem('access_token');
     return this.http.get<ApiResponse<RetrainDatasetInfo>>(
-      `${this.apiUrl}/retrain/dataset-info/?model_type=${modelType}`,
+      `${this.apiUrl}/retrain/dataset-info/?model_type=${modelType}&min_images_per_class=${minImagesPerClass}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
 
-  triggerRetrain(modelType: 'leaf' | 'fruit', modelKind: 'mobilenetv2' | 'hybrid_cnn' = 'mobilenetv2'): Observable<ApiResponse<any>> {
+  triggerRetrain(
+    modelType: 'leaf' | 'fruit',
+    modelKind: 'mobilenetv2' | 'hybrid_cnn' = 'mobilenetv2',
+    config?: RetrainConfig,
+  ): Observable<ApiResponse<any>> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/retrain/`,
-      { model_type: modelType, model_kind: modelKind },
+      { model_type: modelType, model_kind: modelKind, ...config },
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
@@ -778,6 +794,31 @@ export class MangoDiseaseService {
     const token = localStorage.getItem('access_token');
     return this.http.get<ApiResponse<{ ready: boolean; csv_path: string | null; rows: number | null }>>(
       `${this.apiUrl}/retrain/symptoms-ready/?model_type=${modelType}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  triggerPreprocessing(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<any>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/retrain/preprocess/`,
+      { model_type: modelType },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  getPreprocessingStatus(): Observable<ApiResponse<PreprocessingStatus>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<PreprocessingStatus>>(
+      `${this.apiUrl}/retrain/preprocess/status/`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  checkPreprocessingReady(modelType: 'leaf' | 'fruit'): Observable<ApiResponse<{ ready: boolean; processed: number; classes: number }>> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ApiResponse<{ ready: boolean; processed: number; classes: number }>>(
+      `${this.apiUrl}/retrain/preprocess/ready/?model_type=${modelType}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }

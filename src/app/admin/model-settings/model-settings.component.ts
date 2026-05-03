@@ -9,6 +9,7 @@ import {
   RetrainDatasetInfo,
   RetrainStatus,
   SymptomExtractionStatus,
+  PreprocessingStatus,
   RetrainConfig,
 } from '../../services/mango-disease.service';
 
@@ -41,7 +42,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
   retrainSuccessMsg = '';
   showAdvancedConfig = false;
 
-  readonly defaultRetrainConfig: RetrainConfig = {
+  readonly defaultMobileNetConfig: RetrainConfig = {
     epochs:                  10,
     learning_rate:           0.0001,
     batch_size:              16,
@@ -51,9 +52,38 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     lr_reduce_factor:        0.5,
     lr_reduce_patience:      2,
     min_images_per_class:    5,
+    modality_dropout:        0.5,
   };
 
-  retrainConfig: RetrainConfig = { ...this.defaultRetrainConfig };
+  readonly defaultHybridConfig: RetrainConfig = {
+    epochs:                  50,
+    learning_rate:           0.001,
+    batch_size:              32,
+    val_split:               0.2,
+    unfreeze_top_n_layers:   0,
+    early_stopping_patience: 10,
+    lr_reduce_factor:        0.5,
+    lr_reduce_patience:      4,
+    min_images_per_class:    5,
+    modality_dropout:        0.5,
+  };
+
+  get defaultRetrainConfig(): RetrainConfig {
+    return this.retrainModelKind === 'hybrid_cnn'
+      ? this.defaultHybridConfig
+      : this.defaultMobileNetConfig;
+  }
+
+  retrainConfig: RetrainConfig = { ...this.defaultMobileNetConfig };
+
+  // ── preprocessing state ────────────────────────────────────────────────────
+  preprocessingReady    = false;
+  preprocessingCount: number | null = null;
+  preprocessingClasses: number | null = null;
+  isCheckingPreprocessing  = false;
+  isPreprocessing          = false;
+  preprocessingStatus: PreprocessingStatus | null = null;
+  preprocessingErrorMsg    = '';
 
   // ── symptom extraction state (Hybrid CNN only) ─────────────────────────────
   symptomsReady    = false;
@@ -66,6 +96,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
 
   private pollSub: Subscription | null = null;
   private extractionPollSub: Subscription | null = null;
+  private preprocessingPollSub: Subscription | null = null;
 
   constructor(
     private router: Router,
@@ -80,6 +111,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopPolling();
     this.stopExtractionPolling();
+    this.stopPreprocessingPolling();
   }
 
   // ── model-swap methods ─────────────────────────────────────────────────────
@@ -143,9 +175,15 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
   // ── retrain methods ────────────────────────────────────────────────────────
 
   onRetrainModelTypeChange(): void {
-    this.datasetInfo       = null;
-    this.retrainErrorMsg   = '';
-    this.retrainSuccessMsg = '';
+    this.datasetInfo          = null;
+    this.retrainErrorMsg      = '';
+    this.retrainSuccessMsg    = '';
+    this.preprocessingReady   = false;
+    this.preprocessingCount   = null;
+    this.preprocessingClasses = null;
+    this.preprocessingStatus  = null;
+    this.preprocessingErrorMsg = '';
+    this.stopPreprocessingPolling();
     this.resetExtractionState();
   }
 
@@ -153,13 +191,14 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     this.datasetInfo       = null;
     this.retrainErrorMsg   = '';
     this.retrainSuccessMsg = '';
+    this.retrainConfig     = { ...this.defaultRetrainConfig };
     this.resetExtractionState();
   }
 
   loadDatasetInfo(): void {
     this.isLoadingDataset = true;
     this.retrainErrorMsg  = '';
-    this.mangoService.getRetrainDatasetInfo(this.retrainModelType).subscribe({
+    this.mangoService.getRetrainDatasetInfo(this.retrainModelType, this.retrainConfig.min_images_per_class).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.datasetInfo = res.data;
@@ -184,7 +223,7 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
     this.retrainSuccessMsg = '';
     this.isRetraining      = true;
 
-    this.mangoService.triggerRetrain(this.retrainModelType, this.retrainModelKind).subscribe({
+    this.mangoService.triggerRetrain(this.retrainModelType, this.retrainModelKind, this.retrainConfig).subscribe({
       next: (res) => {
         if (res.success) {
           this.retrainSuccessMsg = res.message || 'Retraining started.';
@@ -364,6 +403,95 @@ export class ModelSettingsComponent implements OnInit, OnDestroy {
       this.extractionPollSub.unsubscribe();
       this.extractionPollSub = null;
     }
+  }
+
+  // ── preprocessing methods ──────────────────────────────────────────────────
+
+  checkPreprocessingReady(): void {
+    this.isCheckingPreprocessing = true;
+    this.preprocessingErrorMsg   = '';
+    this.mangoService.checkPreprocessingReady(this.retrainModelType).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.preprocessingReady   = res.data.ready;
+          this.preprocessingCount   = res.data.processed;
+          this.preprocessingClasses = res.data.classes;
+        }
+        this.isCheckingPreprocessing = false;
+      },
+      error: () => { this.isCheckingPreprocessing = false; },
+    });
+  }
+
+  startPreprocessing(): void {
+    this.preprocessingErrorMsg = '';
+    this.isPreprocessing       = true;
+    this.mangoService.triggerPreprocessing(this.retrainModelType).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.startPreprocessingPolling();
+        } else {
+          this.preprocessingErrorMsg = res.message || 'Failed to start preprocessing.';
+          this.isPreprocessing       = false;
+        }
+      },
+      error: (err) => {
+        this.preprocessingErrorMsg = err?.error?.message || 'Could not start preprocessing.';
+        this.isPreprocessing       = false;
+      },
+    });
+  }
+
+  private startPreprocessingPolling(): void {
+    this.stopPreprocessingPolling();
+    this.preprocessingPollSub = interval(2000)
+      .pipe(
+        switchMap(() => this.mangoService.getPreprocessingStatus()),
+        takeWhile((res) => res.data?.is_running === true, true),
+      )
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.preprocessingStatus = res.data;
+            if (!res.data.is_running) {
+              this.isPreprocessing = false;
+              if (res.data.phase === 'done') {
+                this.preprocessingReady   = true;
+                this.preprocessingCount   = res.data.processed;
+              } else if (res.data.phase === 'error') {
+                this.preprocessingErrorMsg = res.data.error || 'Preprocessing failed.';
+              }
+              this.stopPreprocessingPolling();
+            }
+          }
+        },
+        error: () => {
+          this.stopPreprocessingPolling();
+          this.isPreprocessing = false;
+        },
+      });
+  }
+
+  private stopPreprocessingPolling(): void {
+    if (this.preprocessingPollSub) {
+      this.preprocessingPollSub.unsubscribe();
+      this.preprocessingPollSub = null;
+    }
+  }
+
+  get preprocessingProgressWidth(): string {
+    return `${this.preprocessingStatus?.progress ?? 0}%`;
+  }
+
+  get preprocessingPhaseLabel(): string {
+    const map: Record<string, string> = {
+      starting:    'Starting…',
+      downloading: 'Downloading images…',
+      processing:  'Preprocessing images…',
+      done:        'Done',
+      error:       'Error',
+    };
+    return map[this.preprocessingStatus?.phase ?? ''] ?? '';
   }
 
   // ── template helpers ───────────────────────────────────────────────────────

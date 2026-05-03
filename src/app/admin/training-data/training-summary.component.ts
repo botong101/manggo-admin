@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TrainingDataService } from '../../services/training-data.service';
 import { TrainingDataState } from '../../services/training-data.state';
@@ -10,7 +11,7 @@ import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-training-summary',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './training-summary.component.html',
   styleUrls: ['./training-summary.component.css'],
 })
@@ -56,9 +57,8 @@ export class TrainingSummaryComponent implements OnInit {
 
   get readinessPct(): number {
     if (!this.summary || this.summary.total_verified === 0) return 0;
-    return Math.min(100, Math.round(
-      (this.summary.total_training_ready / this.summary.total_verified) * 100
-    ));
+    const pct = (this.summary.total_training_ready / this.summary.total_verified) * 100;
+    return Math.min(100, Math.round(pct));  // Cap at 100%
   }
 
   get leafBreakdown(): TrainingClassBreakdown[] {
@@ -97,5 +97,70 @@ export class TrainingSummaryComponent implements OnInit {
 
   get minImagesPerClass(): number {
     return this.leafDatasetInfo?.min_images_per_class ?? this.fruitDatasetInfo?.min_images_per_class ?? 5;
+  }
+
+  // ── Bulk import ────────────────────────────────────────────────────────────
+
+  readonly LEAF_CLASSES  = ['Anthracnose', 'Die Back', 'Healthy', 'Powdery Mildew', 'Sooty Mold'];
+  readonly FRUIT_CLASSES = ['Alternaria', 'Anthracnose', 'Black Mold Rot', 'Healthy', 'Stem end Rot'];
+
+  showImportPanel       = false;
+  importDiseaseType: 'leaf' | 'fruit' = 'leaf';
+  importClassification  = '';
+  importMarkReady       = true;
+  importSelectedFiles: File[] = [];
+  isImporting           = false;
+  importResultMsg       = '';
+  importResultIsError   = false;
+
+  get importClassOptions(): string[] {
+    return this.importDiseaseType === 'fruit' ? this.FRUIT_CLASSES : this.LEAF_CLASSES;
+  }
+
+  onImportTypeChange(): void {
+    this.importClassification = '';
+    this.importResultMsg      = '';
+  }
+
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+      this.importSelectedFiles = Array.from(input.files);
+      this.importResultMsg     = '';
+    }
+  }
+
+  removeImportFile(index: number): void {
+    this.importSelectedFiles = this.importSelectedFiles.filter((_, i) => i !== index);
+  }
+
+  submitBulkImport(): void {
+    if (!this.importClassification || this.importSelectedFiles.length === 0) return;
+
+    this.isImporting      = true;
+    this.importResultMsg  = '';
+
+    const fd = new FormData();
+    fd.append('disease_type',          this.importDiseaseType);
+    fd.append('disease_classification', this.importClassification);
+    fd.append('training_ready',        String(this.importMarkReady));
+    this.importSelectedFiles.forEach(f => fd.append('images', f, f.name));
+
+    this.trainingDataService.bulkImport(fd).subscribe({
+      next: (res) => {
+        this.isImporting         = false;
+        this.importResultIsError = res.errors.length > 0 && res.created === 0;
+        this.importResultMsg     = res.message;
+        if (res.created > 0) {
+          this.importSelectedFiles = [];
+          this.ngOnInit();
+        }
+      },
+      error: (err) => {
+        this.isImporting         = false;
+        this.importResultIsError = true;
+        this.importResultMsg     = err?.error?.message || 'Import failed.';
+      },
+    });
   }
 }
