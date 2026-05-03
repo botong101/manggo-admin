@@ -1,9 +1,8 @@
 <div class="p-6 max-w-4xl mx-auto">
   <h1 class="text-xl font-bold text-gray-800 mb-1">Training Data Readiness</h1>
   <p class="text-sm text-gray-500 mb-6">
-    Records must have
+    
     <code class="text-xs bg-gray-100 px-1 rounded">training_ready = true</code>
-    to be ingested by the XGBoost symptom classifier.
   </p>
 
   <div *ngIf="loading" class="text-center py-16 text-gray-400">
@@ -126,6 +125,147 @@
         </p>
       </div>
     </div>
+
+    <!-- Bulk Import Panel -->
+    <div class="mb-6 border border-dashed border-gray-300 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        (click)="showImportPanel = !showImportPanel"
+        class="w-full flex items-center justify-between px-5 py-3.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Bulk Import Training Images
+          <span class="text-xs font-normal text-gray-400">— quickly add images for testing</span>
+        </span>
+        <svg class="w-4 h-4 text-gray-400 transition-transform"
+             [class.rotate-180]="showImportPanel"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <div *ngIf="showImportPanel" class="p-5 bg-white space-y-4">
+
+        <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Images imported here are immediately marked as <strong>verified</strong> and <strong>training-ready</strong>, bypassing the normal review flow. Use only for testing.
+        </p>
+
+        <!-- Disease type -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5">Disease Type</label>
+          <div class="flex gap-2">
+            <button type="button"
+              (click)="importDiseaseType = 'leaf'; onImportTypeChange()"
+              [class.bg-green-600]="importDiseaseType === 'leaf'"
+              [class.text-white]="importDiseaseType === 'leaf'"
+              [class.bg-gray-100]="importDiseaseType !== 'leaf'"
+              [class.text-gray-700]="importDiseaseType !== 'leaf'"
+              class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+              Leaf
+            </button>
+            <button type="button"
+              (click)="importDiseaseType = 'fruit'; onImportTypeChange()"
+              [class.bg-yellow-500]="importDiseaseType === 'fruit'"
+              [class.text-white]="importDiseaseType === 'fruit'"
+              [class.bg-gray-100]="importDiseaseType !== 'fruit'"
+              [class.text-gray-700]="importDiseaseType !== 'fruit'"
+              class="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+              Fruit
+            </button>
+          </div>
+        </div>
+
+        <!-- Disease classification -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5">Disease Classification</label>
+          <select [(ngModel)]="importClassification"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="" disabled>Select a class…</option>
+            <option *ngFor="let cls of importClassOptions" [value]="cls">{{ cls }}</option>
+          </select>
+        </div>
+
+        <!-- Mark training ready toggle -->
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="importMarkReady" [(ngModel)]="importMarkReady"
+                 class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+          <label for="importMarkReady" class="text-sm text-gray-700">
+            Mark as training-ready immediately
+          </label>
+        </div>
+
+        <!-- File picker -->
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5">
+            Images
+            <span *ngIf="importSelectedFiles.length > 0" class="ml-1 text-blue-600">
+              ({{ importSelectedFiles.length }} selected)
+            </span>
+          </label>
+          <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+            <svg class="w-6 h-6 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="text-xs text-gray-500">Click to select images (jpg, png, webp…)</span>
+            <input type="file" multiple accept="image/*" class="hidden" (change)="onFilesSelected($event)" />
+          </label>
+
+          <!-- File list -->
+          <ul *ngIf="importSelectedFiles.length > 0"
+              class="mt-2 max-h-32 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-lg text-xs">
+            <li *ngFor="let f of importSelectedFiles; let i = index"
+                class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50">
+              <span class="truncate text-gray-700 max-w-xs">{{ f.name }}</span>
+              <button type="button" (click)="removeImportFile(i)"
+                      class="ml-2 text-gray-400 hover:text-red-500 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Result message -->
+        <div *ngIf="importResultMsg"
+             class="rounded-lg px-4 py-2.5 text-sm"
+             [class.bg-green-50]="!importResultIsError"
+             [class.text-green-800]="!importResultIsError"
+             [class.border]="true"
+             [class.border-green-200]="!importResultIsError"
+             [class.bg-red-50]="importResultIsError"
+             [class.text-red-800]="importResultIsError"
+             [class.border-red-200]="importResultIsError">
+          {{ importResultMsg }}
+        </div>
+
+        <!-- Import button -->
+        <div class="flex justify-end">
+          <button
+            type="button"
+            (click)="submitBulkImport()"
+            [disabled]="isImporting || !importClassification || importSelectedFiles.length === 0"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
+                   bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800
+                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <svg *ngIf="isImporting" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg *ngIf="!isImporting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {{ isImporting ? 'Importing…' : 'Import ' + importSelectedFiles.length + ' Image(s)' }}
+          </button>
+        </div>
+
+      </div>
+    </div><!-- /bulk import -->
 
     <!-- Per-class breakdown tables -->
     <div class="grid grid-cols-2 gap-6">

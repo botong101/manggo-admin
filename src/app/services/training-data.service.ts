@@ -52,4 +52,14 @@ import {
        payload
      );
    }
+
+   /** POST /api/training-data/bulk-import/ */
+   bulkImport(formData: FormData): Observable<{
+     success: boolean;
+     message: string;
+     created: number;
+     errors: { filename: string; error: string }[];
+   }> {
+     return this.http.post<any>(`${this.api}/training-data/bulk-import/`, formData);
+   }
  }
